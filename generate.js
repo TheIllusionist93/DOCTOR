@@ -247,14 +247,14 @@ function generateWallpaper(projectConfig, design) {
   ctx.font = 'bold 650px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.globalAlpha = 0.20; // Besser sichtbar
+  ctx.globalAlpha = 0.30; // Besser sichtbar
   
   // DOCTOR über mehrere Zeilen verteilt, leicht versetzt
   const startY = 350;
   const lineHeight = 550;
   
   ctx.fillText('DOCTOR', 50, startY);
-  ctx.fillText('TOR DOC', 0, startY + lineHeight);
+  ctx.fillText('TOR DOC', 100, startY + lineHeight);
   ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
   
   ctx.restore();
