@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>365 Days Wallpaper</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #display {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(255,107,53,0.3);
+        }
+    </style>
+</head>
+<body>
+    <img id="display" alt="365 Days Wallpaper">
+    <canvas id="wallpaperCanvas" style="display: none;"></canvas>
+
+    <script>
+        function generateWallpaper() {
+            var canvas = document.getElementById('wallpaperCanvas');
+            var ctx = canvas.getContext('2d');
+            
+            canvas.width = 1170;
+            canvas.height = 2532;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            var now = new Date();
+            var start = new Date(now.getFullYear(), 0, 1);
+            var diff = now - start;
+            var oneDay = 1000 * 60 * 60 * 24;
+            var dayOfYear = Math.floor(diff / oneDay) + 1;
+            var year = now.getFullYear();
+            var isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+            var daysInYear = isLeap ? 366 : 365;
+
+            var cols = 21;
+            var rows = 18;
+            var dotSize = 16;
+            var spacing = 44;
+            
+            var gridWidth = (cols - 1) * spacing + dotSize;
+            var gridHeight = (rows - 1) * spacing + dotSize;
+            var startX = (canvas.width - gridWidth) / 2;
+            var startY = (canvas.height - gridHeight) / 2 - 150;
+
+            for (var i = 0; i < daysInYear; i++) {
+                var row = Math.floor(i / cols);
+                var col = i % cols;
+                
+                var x = startX + col * spacing + dotSize / 2;
+                var y = startY + row * spacing + dotSize / 2;
+
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize / 2, 0, Math.PI * 2);
+
+                if (i < dayOfYear - 1) {
+                    ctx.fillStyle = '#ffffff';
+                } else if (i === dayOfYear - 1) {
+                    ctx.fillStyle = '#ff6b35';
+                } else {
+                    ctx.fillStyle = '#333333';
+                }
+                
+                ctx.fill();
+            }
+
+            var daysLeft = daysInYear - dayOfYear;
+            var percentage = Math.round((dayOfYear / daysInYear) * 100);
+
+            ctx.fillStyle = '#ff6b35';
+            ctx.font = 'bold 72px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(daysLeft + 'd left', canvas.width / 2, canvas.height - 250);
+
+            ctx.fillStyle = '#666666';
+            ctx.font = '48px sans-serif';
+            ctx.fillText(percentage + '%', canvas.width / 2, canvas.height - 170);
+
+            ctx.fillStyle = '#444444';
+            ctx.font = 'bold 40px sans-serif';
+            ctx.fillText(year + '', canvas.width / 2, canvas.height - 80);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        window.addEventListener('load', function() {
+            var dataUrl = generateWallpaper();
+            document.getElementById('display').src = dataUrl;
+        });
+    </script>
+</body>
+</html>
