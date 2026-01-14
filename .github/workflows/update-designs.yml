@@ -1,0 +1,72 @@
+name: Update Designs from File
+
+on:
+  push:
+    paths:
+      - 'designs.json'
+  workflow_dispatch:
+
+jobs:
+  update-generate-js:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Update generate.js from designs.json
+      run: |
+        node << 'EOF'
+        const fs = require('fs');
+        
+        // Read designs.json
+        const designs = JSON.parse(fs.readFileSync('designs.json', 'utf8'));
+        
+        // Read current generate.js
+        let generateJs = fs.readFileSync('generate.js', 'utf8');
+        
+        // Find and replace the DESIGNS object
+        const designsString = JSON.stringify(designs, null, 2);
+        const newDesignsBlock = `const DESIGNS = ${designsString};`;
+        
+        // Replace between "const DESIGNS = {" and the closing "};"
+        const regex = /const DESIGNS = \{[\s\S]*?\n\};/;
+        generateJs = generateJs.replace(regex, newDesignsBlock);
+        
+        // Write back
+        fs.writeFileSync('generate.js', generateJs);
+        console.log('✅ generate.js updated successfully!');
+        EOF
+        
+    - name: Commit changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git config pull.rebase true
+        git fetch origin
+        git add generate.js
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update generate.js from designs.json"
+        git pull --rebase origin main || true
+        git push origin main
+        
+    - name: Generate wallpapers
+      run: |
+        npm install canvas
+        node generate.js
+        
+    - name: Commit wallpapers
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add wallpaper*.png
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update wallpapers $(date +'%Y-%m-%d')"
+        git push
+
