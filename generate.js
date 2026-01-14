@@ -12,7 +12,7 @@ const PROJECT_CONFIG = {
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
   weekendWorkDays: [
-    '2026-01-17',
+    '2026-05-17',
     // Weitere Daten hier einfügen
   ],
   
@@ -23,6 +23,17 @@ const PROJECT_CONFIG = {
     '2025-12-24',
     '2025-12-25',
     '2025-12-26',
+    '2025-12-27',
+    '2025-12-28',
+    '2025-12-29',
+    '2025-12-30',
+    '2025-12-31',
+    '2026-01-01',
+    '2026-01-02',
+    '2026-01-03',
+    '2026-01-04',
+    '2026-01-05',
+    '2026-01-06',
     // Weitere Daten hier einfügen
   ]
 };
