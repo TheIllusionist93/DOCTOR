@@ -43,16 +43,20 @@ const DESIGN = {
     textSecondary: '#6b7280',
   },
   dots: {
-    size: 14,
-    spacing: 42,
+    size: 24,        // Größere Punkte (war 14)
+    spacing: 60,     // Mehr Abstand (war 42)
+  },
+  grid: {
+    cols: 9,         // 9 Spalten
+    rows: 9,         // 9 Zeilen (= 81 Punkte, also 6 mehr als nötig)
   },
   progressBar: {
-    height: 4,
-    marginTop: 60,
+    height: 6,
+    marginTop: 80,
   },
   text: {
-    fontSize: 32,
-    marginTop: 60,
+    fontSize: 40,
+    marginTop: 70,
   }
 };
 
@@ -74,18 +78,15 @@ function formatDate(date) {
 
 function isWeekend(date) {
   const day = date.getDay();
-  return day === 0 || day === 6; // Sonntag oder Samstag
+  return day === 0 || day === 6;
 }
 
 function isWorkDay(date, config) {
   const dateStr = formatDate(date);
   
-  // Ist es ein Wochenende?
   if (isWeekend(date)) {
-    // Arbeitet man an diesem Wochenende?
     return config.weekendWorkDays.includes(dateStr);
   } else {
-    // Ist an diesem Wochentag frei?
     return !config.weekdayOffDays.includes(dateStr);
   }
 }
@@ -118,58 +119,72 @@ function getCurrentDayIndex(shootingDays) {
     shootDay.setHours(0, 0, 0, 0);
     
     if (shootDay.getTime() === today.getTime()) {
-      return i; // Heute ist ein Drehtag
+      return i;
     }
     
     if (shootDay > today) {
-      return i - 1; // Heute liegt zwischen Drehtagen
+      return i - 1;
     }
   }
   
-  // Projekt ist abgeschlossen
   return shootingDays.length - 1;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 🌀 SPIRAL-KOORDINATEN BERECHNEN
+// 🌀 RECHTECK-SPIRAL-KOORDINATEN (AUSSEN NACH INNEN)
 // ═══════════════════════════════════════════════════════════════════
 
-function generateSpiralCoordinates(totalDots, dotSpacing) {
+function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
   const coords = [];
-  let x = 0;
-  let y = 0;
-  let dx = dotSpacing;
-  let dy = 0;
-  let segmentLength = 1;
-  let segmentPassed = 0;
-  let direction = 0; // 0=rechts, 1=runter, 2=links, 3=hoch
   
-  for (let i = 0; i < totalDots; i++) {
-    coords.push({ x, y });
+  // Grid-Positionen erstellen
+  const grid = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      grid.push({
+        x: col * dotSpacing,
+        y: row * dotSpacing,
+        col: col,
+        row: row
+      });
+    }
+  }
+  
+  // Spirale von außen nach innen
+  let left = 0, right = cols - 1;
+  let top = 0, bottom = rows - 1;
+  
+  while (coords.length < totalDots && left <= right && top <= bottom) {
+    // Oben von links nach rechts
+    for (let col = left; col <= right && coords.length < totalDots; col++) {
+      const pos = grid.find(p => p.row === top && p.col === col);
+      if (pos) coords.push({ x: pos.x, y: pos.y });
+    }
+    top++;
     
-    x += dx;
-    y += dy;
-    segmentPassed++;
+    // Rechts von oben nach unten
+    for (let row = top; row <= bottom && coords.length < totalDots; row++) {
+      const pos = grid.find(p => p.row === row && p.col === right);
+      if (pos) coords.push({ x: pos.x, y: pos.y });
+    }
+    right--;
     
-    if (segmentPassed === segmentLength) {
-      segmentPassed = 0;
-      direction = (direction + 1) % 4;
-      
-      if (direction === 0) {
-        dx = dotSpacing;
-        dy = 0;
-      } else if (direction === 1) {
-        dx = 0;
-        dy = dotSpacing;
-      } else if (direction === 2) {
-        dx = -dotSpacing;
-        dy = 0;
-        segmentLength++;
-      } else {
-        dx = 0;
-        dy = -dotSpacing;
-        segmentLength++;
+    // Unten von rechts nach links
+    if (top <= bottom) {
+      for (let col = right; col >= left && coords.length < totalDots; col--) {
+        const pos = grid.find(p => p.row === bottom && p.col === col);
+        if (pos) coords.push({ x: pos.x, y: pos.y });
       }
+      bottom--;
+    }
+    
+    // Links von unten nach oben
+    if (left <= right) {
+      for (let row = bottom; row >= top && coords.length < totalDots; row--) {
+        const pos = grid.find(p => p.row === row && p.col === left);
+        if (pos) coords.push({ x: pos.x, y: pos.y });
+      }
+      left++;
     }
   }
   
@@ -199,8 +214,13 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
   
-  // Spiral-Koordinaten generieren
-  const coords = generateSpiralCoordinates(projectConfig.totalDays, design.dots.spacing);
+  // Rechteck-Spiral-Koordinaten generieren
+  const coords = generateRectangleSpiralCoordinates(
+    projectConfig.totalDays,
+    design.grid.cols,
+    design.grid.rows,
+    design.dots.spacing
+  );
   
   // Bounding Box berechnen
   let minX = Infinity, maxX = -Infinity;
@@ -213,12 +233,12 @@ function generateWallpaper(projectConfig, design) {
     maxY = Math.max(maxY, y);
   });
   
-  const spiralWidth = maxX - minX;
-  const spiralHeight = maxY - minY;
+  const gridWidth = maxX - minX;
+  const gridHeight = maxY - minY;
   
   // Zentrierung
-  const offsetX = (1170 - spiralWidth) / 2 - minX;
-  const offsetY = (2532 - spiralHeight) / 2 - minY - 200;
+  const offsetX = (1170 - gridWidth) / 2 - minX;
+  const offsetY = (2532 - gridHeight) / 2 - minY - 200;
   
   // Punkte zeichnen
   coords.forEach(({ x, y }, i) => {
@@ -240,8 +260,8 @@ function generateWallpaper(projectConfig, design) {
   });
   
   // Fortschrittsbalken
-  const barY = offsetY + spiralHeight / 2 + spiralHeight / 2 + design.progressBar.marginTop;
-  const barWidth = 600;
+  const barY = offsetY + gridHeight / 2 + gridHeight / 2 + design.progressBar.marginTop;
+  const barWidth = 700;
   const barX = (1170 - barWidth) / 2;
   
   // Hintergrund
@@ -255,7 +275,7 @@ function generateWallpaper(projectConfig, design) {
   // Text
   const textY = barY + design.text.marginTop;
   ctx.fillStyle = design.colors.text;
-  ctx.font = `${design.text.fontSize}px Arial`;
+  ctx.font = `bold ${design.text.fontSize}px Arial`;
   ctx.textAlign = 'center';
   ctx.fillText(
     `${projectConfig.projectName} ${completedDays}/${projectConfig.totalDays}`,
