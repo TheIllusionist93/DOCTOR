@@ -44,22 +44,23 @@ const PROJECT_CONFIG = {
 
 const DESIGN = {
   colors: {
-    background: '#1a1a1a',
+    background: '#E8461B',      // Leuchtendes Orange
+    backgroundText: '#D63D15',  // Etwas dunkler für DOCTOR im Hintergrund
     pastDays: '#ffffff',
-    today: '#ec4899',
-    futureDays: '#404040',
-    progressBar: '#ec4899',
-    progressBarBg: '#2d2d2d',
+    today: '#C8D41E',           // Grün-Gelb
+    futureDays: '#B8320F',      // Dunkleres Orange
+    progressBar: '#C8D41E',     // Grün-Gelb
+    progressBarBg: '#B8320F',   // Dunkleres Orange
     text: '#ffffff',
-    textSecondary: '#6b7280',
+    textSecondary: '#ffffff',
   },
   dots: {
-    size: 24,        // Größere Punkte (war 14)
-    spacing: 60,     // Mehr Abstand (war 42)
+    size: 24,
+    spacing: 60,
   },
   grid: {
-    cols: 9,         // 9 Spalten
-    rows: 9,         // 9 Zeilen (= 81 Punkte, also 6 mehr als nötig)
+    cols: 9,
+    rows: 9,
   },
   progressBar: {
     height: 6,
@@ -130,15 +131,26 @@ function getCurrentDayIndex(shootingDays) {
     shootDay.setHours(0, 0, 0, 0);
     
     if (shootDay.getTime() === today.getTime()) {
-      return i;
+      return i; // Heute ist ein Arbeitstag
     }
     
     if (shootDay > today) {
-      return i - 1;
+      return i - 1; // Heute ist kein Arbeitstag
     }
   }
   
   return shootingDays.length - 1;
+}
+
+function isTodayAWorkDay(shootingDays) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return shootingDays.some(shootDay => {
+    const day = new Date(shootDay);
+    day.setHours(0, 0, 0, 0);
+    return day.getTime() === today.getTime();
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -210,12 +222,14 @@ function generateWallpaper(projectConfig, design) {
   console.log(`📅 Berechne Drehtage...`);
   const shootingDays = calculateShootingDays(projectConfig);
   const currentDayIndex = getCurrentDayIndex(shootingDays);
+  const todayIsWorkDay = isTodayAWorkDay(shootingDays);
   const completedDays = currentDayIndex + 1;
   const percentage = Math.round((completedDays / projectConfig.totalDays) * 100);
   
   console.log(`   Start: ${formatDate(shootingDays[0])}`);
   console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
   console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
+  console.log(`   Heute ist ${todayIsWorkDay ? 'ein' : 'kein'} Arbeitstag`);
   
   // Canvas erstellen
   const canvas = createCanvas(1170, 2532);
@@ -224,6 +238,20 @@ function generateWallpaper(projectConfig, design) {
   // Hintergrund
   ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
+  
+  // DOCTOR im Hintergrund
+  ctx.save();
+  ctx.fillStyle = design.colors.backgroundText;
+  ctx.font = 'bold 380px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.15; // Sehr subtil
+  
+  // DOCTOR vertikal zentriert
+  const docY = 1266; // Mitte des Canvas
+  ctx.fillText('DOCTOR', 585, docY);
+  
+  ctx.restore();
   
   // Rechteck-Spiral-Koordinaten generieren
   const coords = generateRectangleSpiralCoordinates(
@@ -260,10 +288,16 @@ function generateWallpaper(projectConfig, design) {
     ctx.arc(centerX, centerY, design.dots.size / 2, 0, Math.PI * 2);
     
     if (i < completedDays - 1) {
+      // Vergangene Tage
       ctx.fillStyle = design.colors.pastDays;
-    } else if (i === completedDays - 1) {
+    } else if (i === completedDays - 1 && todayIsWorkDay) {
+      // Heute - nur wenn es ein Arbeitstag ist
       ctx.fillStyle = design.colors.today;
+    } else if (i === completedDays - 1 && !todayIsWorkDay) {
+      // Heute ist kein Arbeitstag - als vergangen markieren
+      ctx.fillStyle = design.colors.pastDays;
     } else {
+      // Zukünftige Tage
       ctx.fillStyle = design.colors.futureDays;
     }
     
