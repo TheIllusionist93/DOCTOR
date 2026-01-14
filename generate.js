@@ -57,6 +57,7 @@ const DESIGN = {
   dots: {
     size: 24,
     spacing: 60,
+    verticalOffset: 100,  // ANPASSEN: Positive Zahl = nach unten, negative = nach oben
   },
   grid: {
     cols: 9,
@@ -239,16 +240,16 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
   
-  // DOCTOR im Hintergrund
+  // DOCTOR im Hintergrund - WEITER OBEN platziert
   ctx.save();
   ctx.fillStyle = design.colors.backgroundText;
-  ctx.font = 'bold 380px Arial';
+  ctx.font = 'bold 420px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.globalAlpha = 0.15; // Sehr subtil
+  ctx.globalAlpha = 0.2; // Etwas sichtbarer
   
-  // DOCTOR vertikal zentriert
-  const docY = 1266; // Mitte des Canvas
+  // DOCTOR weiter oben
+  const docY = 900; // Höher positioniert (war 1266)
   ctx.fillText('DOCTOR', 585, docY);
   
   ctx.restore();
@@ -275,9 +276,9 @@ function generateWallpaper(projectConfig, design) {
   const gridWidth = maxX - minX;
   const gridHeight = maxY - minY;
   
-  // Zentrierung
+  // Zentrierung mit verticalOffset
   const offsetX = (1170 - gridWidth) / 2 - minX;
-  const offsetY = (2532 - gridHeight) / 2 - minY - 200;
+  const offsetY = (2532 - gridHeight) / 2 - minY + design.dots.verticalOffset;
   
   // Punkte zeichnen
   coords.forEach(({ x, y }, i) => {
@@ -305,7 +306,7 @@ function generateWallpaper(projectConfig, design) {
   });
   
   // Fortschrittsbalken
-  const barY = offsetY + gridHeight / 2 + gridHeight / 2 + design.progressBar.marginTop;
+  const barY = offsetY + gridHeight + design.progressBar.marginTop;
   const barWidth = 700;
   const barX = (1170 - barWidth) / 2;
   
@@ -317,11 +318,19 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillStyle = design.colors.progressBar;
   ctx.fillRect(barX, barY, (barWidth * percentage) / 100, design.progressBar.height);
   
-  // Text
+  // Text - GRÖSSER und BESSER SICHTBAR
   const textY = barY + design.text.marginTop;
   ctx.fillStyle = design.colors.text;
   ctx.font = `bold ${design.text.fontSize}px Arial`;
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Leichter Schatten für bessere Lesbarkeit
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 2;
+  
   ctx.fillText(
     `${projectConfig.projectName} ${completedDays}/${projectConfig.totalDays}`,
     585,
