@@ -243,18 +243,18 @@ function generateWallpaper(projectConfig, design) {
   // DOCTOR im Hintergrund - RIESIGE BUCHSTABEN, MEHRERE ZEILEN
   ctx.save();
   ctx.fillStyle = design.colors.backgroundText;
-  ctx.font = 'bold 850px Arial';
+  ctx.font = 'bold 650px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.globalAlpha = 0.12; // Sehr subtil
+  ctx.globalAlpha = 0.18; // Besser sichtbar
   
   // DOCTOR über mehrere Zeilen verteilt, leicht versetzt
-  const startY = 200;
-  const lineHeight = 700;
+  const startY = 350;
+  const lineHeight = 550;
   
-  ctx.fillText('DOCTO', -50, startY);
-  ctx.fillText('OR DOC', 120, startY + lineHeight);
-  ctx.fillText('CTOR D', -80, startY + lineHeight * 2);
+  ctx.fillText('DOCTO', 50, startY);
+  ctx.fillText('OR DOC', 180, startY + lineHeight);
+  ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
   
   ctx.restore();
   
