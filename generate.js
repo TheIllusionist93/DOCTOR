@@ -34,6 +34,7 @@ const PROJECT_CONFIG = {
     '2026-01-04',
     '2026-01-05',
     '2026-01-06',
+    '2026-01-19',
     // Weitere Daten hier einfügen
   ]
 };
@@ -57,7 +58,7 @@ const DESIGN = {
   dots: {
     size: 24,
     spacing: 60,
-    verticalOffset: 0,  // ANPASSEN: Positive Zahl = nach unten, negative = nach oben
+    verticalOffset: 100,  // ANPASSEN: Positive Zahl = nach unten, negative = nach oben
   },
   grid: {
     cols: 9,
@@ -246,14 +247,14 @@ function generateWallpaper(projectConfig, design) {
   ctx.font = 'bold 650px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.globalAlpha = 0.18; // Besser sichtbar
+  ctx.globalAlpha = 0.20; // Besser sichtbar
   
   // DOCTOR über mehrere Zeilen verteilt, leicht versetzt
   const startY = 350;
   const lineHeight = 550;
   
-  ctx.fillText('DOCTO', 50, startY);
-  ctx.fillText('OR DOC', 180, startY + lineHeight);
+  ctx.fillText('DOCTOR', 50, startY);
+  ctx.fillText('TOR DOC', 0, startY + lineHeight);
   ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
   
   ctx.restore();
