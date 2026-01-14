@@ -2,295 +2,278 @@ const { createCanvas } = require('canvas');
 const fs = require('fs');
 
 // ═══════════════════════════════════════════════════════════════════
-// 🎨 DESIGN-VORLAGEN - HIER KANNST DU VERSCHIEDENE DESIGNS ANLEGEN
+// 📋 PROJEKT-KONFIGURATION - HIER EINFACH ANPASSEN
 // ═══════════════════════════════════════════════════════════════════
 
-const DESIGNS = {
-  "light": {
-    "name": "Light & Minimalistic",
-    "colors": {
-      "background": "#f5f5f0",
-      "pastDays": "#2d2d2d",
-      "today": "#4ade80",
-      "futureDays": "#d4d4d4",
-      "progressBar": "#4ade80",
-      "progressBarBg": "#e5e5e5",
-      "year": "#9ca3af"
-    },
-    "dots": {
-      "size": 14,
-      "spacing": 42,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 4,
-      "distanceFromDots": 40
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 32,
-      "distanceFromBar": 60
-    }
+const PROJECT_CONFIG = {
+  totalDays: 75,
+  startDate: '2025-11-17',  // Format: YYYY-MM-DD
+  projectName: 'DOCTOR',
+  
+  // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
+  weekendWorkDays: [
+    '2026-01-17',
+    // Weitere Daten hier einfügen
+  ],
+  
+  // Ausnahmen: An diesen Wochentagen ist frei
+  weekdayOffDays: [
+    '2025-12-22',
+    '2025-12-23',
+    '2025-12-24',
+    '2025-12-25',
+    '2025-12-26',
+    // Weitere Daten hier einfügen
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 🎨 DESIGN-KONFIGURATION
+// ═══════════════════════════════════════════════════════════════════
+
+const DESIGN = {
+  colors: {
+    background: '#1a1a1a',
+    pastDays: '#ffffff',
+    today: '#ec4899',
+    futureDays: '#404040',
+    progressBar: '#ec4899',
+    progressBarBg: '#2d2d2d',
+    text: '#ffffff',
+    textSecondary: '#6b7280',
   },
-  "dark": {
-    "name": "Dark Mode",
-    "colors": {
-      "background": "#1a1a1a",
-      "pastDays": "#ffffff",
-      "today": "#ff40ff",
-      "futureDays": "#404040",
-      "progressBar": "#ff40ff",
-      "progressBarBg": "#2d2d2d",
-      "year": "#6b7280"
-    },
-    "dots": {
-      "size": 14,
-      "spacing": 42,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 4,
-      "distanceFromDots": 40
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 32,
-      "distanceFromBar": 60
-    }
+  dots: {
+    size: 14,
+    spacing: 42,
   },
-  "pink": {
-    "name": "Pink Pastel",
-    "colors": {
-      "background": "#fff5f5",
-      "pastDays": "#4a5568",
-      "today": "#f472b6",
-      "futureDays": "#e5e7eb",
-      "progressBar": "#f472b6",
-      "progressBarBg": "#fce7f3",
-      "year": "#9ca3af"
-    },
-    "dots": {
-      "size": 14,
-      "spacing": 42,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 4,
-      "distanceFromDots": 40
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 32,
-      "distanceFromBar": 60
-    }
+  progressBar: {
+    height: 4,
+    marginTop: 60,
   },
-  "ocean": {
-    "name": "Ocean Blue",
-    "colors": {
-      "background": "#f0f9ff",
-      "pastDays": "#1e3a8a",
-      "today": "#0ea5e9",
-      "futureDays": "#bfdbfe",
-      "progressBar": "#0ea5e9",
-      "progressBarBg": "#dbeafe",
-      "year": "#64748b"
-    },
-    "dots": {
-      "size": 14,
-      "spacing": 42,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 4,
-      "distanceFromDots": 40
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 32,
-      "distanceFromBar": 60
-    }
-  },
-  "minimal": {
-    "name": "Pure Black & White",
-    "colors": {
-      "background": "#ffffff",
-      "pastDays": "#000000",
-      "today": "#ef4444",
-      "futureDays": "#e5e5e5",
-      "progressBar": "#000000",
-      "progressBarBg": "#f3f4f6",
-      "year": "#9ca3af"
-    },
-    "dots": {
-      "size": 14,
-      "spacing": 42,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 4,
-      "distanceFromDots": 40
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 32,
-      "distanceFromBar": 60
-    }
-  },
-  "compact": {
-    "name": "Compact",
-    "colors": {
-      "background": "#fafaf9",
-      "pastDays": "#292524",
-      "today": "#22c55e",
-      "futureDays": "#d6d3d1",
-      "progressBar": "#22c55e",
-      "progressBarBg": "#e7e5e4",
-      "year": "#78716c"
-    },
-    "dots": {
-      "size": 12,
-      "spacing": 38,
-      "columns": 21
-    },
-    "position": {
-      "verticalOffset": 100
-    },
-    "progressBar": {
-      "show": true,
-      "height": 3,
-      "distanceFromDots": 35
-    },
-    "yearLabel": {
-      "show": true,
-      "fontSize": 28,
-      "distanceFromBar": 50
-    }
+  text: {
+    fontSize: 32,
+    marginTop: 60,
   }
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// 🔧 GENERATOR-FUNKTION
+// 📅 DATUMS-HILFSFUNKTIONEN
 // ═══════════════════════════════════════════════════════════════════
 
-function generateWallpaper(config, filename) {
-  // Datum berechnen
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 1);
-  const diff = now - start;
-  const oneDay = 1000 * 60 * 60 * 24;
-  const dayOfYear = Math.floor(diff / oneDay) + 1;
-  const year = now.getFullYear();
-  const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-  const daysInYear = isLeap ? 366 : 365;
-  const percentage = Math.round((dayOfYear / daysInYear) * 100);
+function parseDate(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
 
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isWeekend(date) {
+  const day = date.getDay();
+  return day === 0 || day === 6; // Sonntag oder Samstag
+}
+
+function isWorkDay(date, config) {
+  const dateStr = formatDate(date);
+  
+  // Ist es ein Wochenende?
+  if (isWeekend(date)) {
+    // Arbeitet man an diesem Wochenende?
+    return config.weekendWorkDays.includes(dateStr);
+  } else {
+    // Ist an diesem Wochentag frei?
+    return !config.weekdayOffDays.includes(dateStr);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🗓️ DREHTAGE BERECHNEN
+// ═══════════════════════════════════════════════════════════════════
+
+function calculateShootingDays(config) {
+  const startDate = parseDate(config.startDate);
+  const shootingDays = [];
+  let currentDate = new Date(startDate);
+  
+  while (shootingDays.length < config.totalDays) {
+    if (isWorkDay(currentDate, config)) {
+      shootingDays.push(new Date(currentDate));
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return shootingDays;
+}
+
+function getCurrentDayIndex(shootingDays) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  for (let i = 0; i < shootingDays.length; i++) {
+    const shootDay = new Date(shootingDays[i]);
+    shootDay.setHours(0, 0, 0, 0);
+    
+    if (shootDay.getTime() === today.getTime()) {
+      return i; // Heute ist ein Drehtag
+    }
+    
+    if (shootDay > today) {
+      return i - 1; // Heute liegt zwischen Drehtagen
+    }
+  }
+  
+  // Projekt ist abgeschlossen
+  return shootingDays.length - 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🌀 SPIRAL-KOORDINATEN BERECHNEN
+// ═══════════════════════════════════════════════════════════════════
+
+function generateSpiralCoordinates(totalDots, dotSpacing) {
+  const coords = [];
+  let x = 0;
+  let y = 0;
+  let dx = dotSpacing;
+  let dy = 0;
+  let segmentLength = 1;
+  let segmentPassed = 0;
+  let direction = 0; // 0=rechts, 1=runter, 2=links, 3=hoch
+  
+  for (let i = 0; i < totalDots; i++) {
+    coords.push({ x, y });
+    
+    x += dx;
+    y += dy;
+    segmentPassed++;
+    
+    if (segmentPassed === segmentLength) {
+      segmentPassed = 0;
+      direction = (direction + 1) % 4;
+      
+      if (direction === 0) {
+        dx = dotSpacing;
+        dy = 0;
+      } else if (direction === 1) {
+        dx = 0;
+        dy = dotSpacing;
+      } else if (direction === 2) {
+        dx = -dotSpacing;
+        dy = 0;
+        segmentLength++;
+      } else {
+        dx = 0;
+        dy = -dotSpacing;
+        segmentLength++;
+      }
+    }
+  }
+  
+  return coords;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🎨 WALLPAPER GENERIEREN
+// ═══════════════════════════════════════════════════════════════════
+
+function generateWallpaper(projectConfig, design) {
+  console.log(`📅 Berechne Drehtage...`);
+  const shootingDays = calculateShootingDays(projectConfig);
+  const currentDayIndex = getCurrentDayIndex(shootingDays);
+  const completedDays = currentDayIndex + 1;
+  const percentage = Math.round((completedDays / projectConfig.totalDays) * 100);
+  
+  console.log(`   Start: ${formatDate(shootingDays[0])}`);
+  console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
+  console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
+  
   // Canvas erstellen
   const canvas = createCanvas(1170, 2532);
   const ctx = canvas.getContext('2d');
-
+  
   // Hintergrund
-  ctx.fillStyle = config.colors.background;
+  ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
-
-  // Grid berechnen
-  const cols = config.dots.columns;
-  const dotSize = config.dots.size;
-  const spacing = config.dots.spacing;
-  const gridWidth = (cols - 1) * spacing + dotSize;
-  const gridHeight = Math.ceil(daysInYear / cols) * spacing;
-  const startX = (1170 - gridWidth) / 2;
-  const startY = (2532 - gridHeight) / 2 + config.position.verticalOffset;
-
+  
+  // Spiral-Koordinaten generieren
+  const coords = generateSpiralCoordinates(projectConfig.totalDays, design.dots.spacing);
+  
+  // Bounding Box berechnen
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  
+  coords.forEach(({ x, y }) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  });
+  
+  const spiralWidth = maxX - minX;
+  const spiralHeight = maxY - minY;
+  
+  // Zentrierung
+  const offsetX = (1170 - spiralWidth) / 2 - minX;
+  const offsetY = (2532 - spiralHeight) / 2 - minY - 200;
+  
   // Punkte zeichnen
-  for (let i = 0; i < daysInYear; i++) {
-    const row = Math.floor(i / cols);
-    const col = i % cols;
+  coords.forEach(({ x, y }, i) => {
+    const centerX = x + offsetX;
+    const centerY = y + offsetY;
     
-    const x = startX + col * spacing + dotSize / 2;
-    const y = startY + row * spacing + dotSize / 2;
-
     ctx.beginPath();
-    ctx.arc(x, y, dotSize / 2, 0, Math.PI * 2);
-
-    if (i < dayOfYear - 1) {
-      ctx.fillStyle = config.colors.pastDays;
-    } else if (i === dayOfYear - 1) {
-      ctx.fillStyle = config.colors.today;
+    ctx.arc(centerX, centerY, design.dots.size / 2, 0, Math.PI * 2);
+    
+    if (i < completedDays - 1) {
+      ctx.fillStyle = design.colors.pastDays;
+    } else if (i === completedDays - 1) {
+      ctx.fillStyle = design.colors.today;
     } else {
-      ctx.fillStyle = config.colors.futureDays;
+      ctx.fillStyle = design.colors.futureDays;
     }
     
     ctx.fill();
-  }
-
-  // Fortschrittsbalken (optional)
-  if (config.progressBar.show) {
-    const barWidth = gridWidth;
-    const barHeight = config.progressBar.height;
-    const barX = startX;
-    const barY = startY + gridHeight + config.progressBar.distanceFromDots;
-
-    // Hintergrund
-    ctx.fillStyle = config.colors.progressBarBg;
-    ctx.fillRect(barX, barY, barWidth, barHeight);
-
-    // Fortschritt
-    ctx.fillStyle = config.colors.progressBar;
-    ctx.fillRect(barX, barY, (barWidth * percentage) / 100, barHeight);
-    
-    // Jahreszahl (optional)
-    if (config.yearLabel.show) {
-      ctx.fillStyle = config.colors.year;
-      ctx.font = `${config.yearLabel.fontSize}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText(year.toString(), 585, barY + config.yearLabel.distanceFromBar);
-    }
-  } else if (config.yearLabel.show) {
-    const barY = startY + gridHeight + config.progressBar.distanceFromDots;
-    ctx.fillStyle = config.colors.year;
-    ctx.font = `${config.yearLabel.fontSize}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText(year.toString(), 585, barY);
-  }
-
+  });
+  
+  // Fortschrittsbalken
+  const barY = offsetY + spiralHeight / 2 + spiralHeight / 2 + design.progressBar.marginTop;
+  const barWidth = 600;
+  const barX = (1170 - barWidth) / 2;
+  
+  // Hintergrund
+  ctx.fillStyle = design.colors.progressBarBg;
+  ctx.fillRect(barX, barY, barWidth, design.progressBar.height);
+  
+  // Fortschritt
+  ctx.fillStyle = design.colors.progressBar;
+  ctx.fillRect(barX, barY, (barWidth * percentage) / 100, design.progressBar.height);
+  
+  // Text
+  const textY = barY + design.text.marginTop;
+  ctx.fillStyle = design.colors.text;
+  ctx.font = `${design.text.fontSize}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.fillText(
+    `${projectConfig.projectName} ${completedDays}/${projectConfig.totalDays}`,
+    585,
+    textY
+  );
+  
   // Als PNG speichern
   const buffer = canvas.toBuffer('image/png');
+  const filename = 'shooting-days-wallpaper.png';
   fs.writeFileSync(filename, buffer);
   
-  return { dayOfYear, daysInYear, percentage };
+  console.log(`\n✅ Wallpaper erstellt: ${filename}`);
+  console.log(`   ${percentage}% abgeschlossen`);
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 🚀 ALLE DESIGNS GENERIEREN
+// 🚀 AUSFÜHREN
 // ═══════════════════════════════════════════════════════════════════
 
-console.log('🎨 Generating wallpapers...\n');
-
-for (const [key, config] of Object.entries(DESIGNS)) {
-  const filename = `wallpaper-${key}.png`;
-  const stats = generateWallpaper(config, filename);
-  console.log(`✅ ${config.name} (${filename})`);
-  console.log(`   Day ${stats.dayOfYear}/${stats.daysInYear} - ${stats.percentage}% complete\n`);
-}
-
-console.log('🎉 All wallpapers generated successfully!');
+generateWallpaper(PROJECT_CONFIG, DESIGN);
