@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallpaper Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a202c 0%, #000 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #4a5568;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="color"] {
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .design-btn {
+            transition: all 0.3s;
+        }
+        .design-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                </svg>
+                <h1 class="text-4xl font-bold">Wallpaper Designer</h1>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="deleteCurrentDesign()" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold">
+                    🗑️ Design löschen
+                </button>
+                <button onclick="addNewDesign()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold">
+                    <span>+</span> Neues Design
+                </button>
+                <button onclick="exportToGitHub()" class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">
+                    🚀 Zu GitHub senden
+                </button>
+                <button onclick="exportCode()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">
+                    📋 Code kopieren
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Editor Panel -->
+            <div class="space-y-6">
+                <!-- Design Selector -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">⚙️ Design wählen</h2>
+                    <div id="designButtons" class="grid grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Colors -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">🎨 Farben</h2>
+                    <div id="colorControls" class="space-y-3"></div>
+                </div>
+
+                <!-- Dots -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">⚫ Punkte</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm block mb-2">Größe: <span id="dotSize">14</span>px</label>
+                            <input type="range" min="8" max="24" value="14" oninput="updateValue('dots.size', parseInt(this.value))" />
+                        </div>
+                        <div>
+                            <label class="text-sm block mb-2">Abstand: <span id="dotSpacing">42</span>px</label>
+                            <input type="range" min="30" max="60" value="42" oninput="updateValue('dots.spacing', parseInt(this.value))" />
+                        </div>
+                        <div>
+                            <label class="text-sm block mb-2">Spalten: <span id="dotColumns">21</span></label>
+                            <input type="range" min="15" max="25" value="21" oninput="updateValue('dots.columns', parseInt(this.value))" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Position -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">📍 Position</h2>
+                    <div>
+                        <label class="text-sm block mb-2">Vertikaler Offset: <span id="verticalOffset">100</span>px</label>
+                        <input type="range" min="-200" max="200" value="100" oninput="updateValue('position.verticalOffset', parseInt(this.value))" />
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">📊 Fortschrittsbalken</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" checked onchange="updateValue('progressBar.show', this.checked)" class="w-5 h-5" />
+                            <span>Balken anzeigen</span>
+                        </label>
+                        <div id="progressBarControls">
+                            <div class="mb-4">
+                                <label class="text-sm block mb-2">Höhe: <span id="barHeight">4</span>px</label>
+                                <input type="range" min="2" max="10" value="4" oninput="updateValue('progressBar.height', parseInt(this.value))" />
+                            </div>
+                            <div>
+                                <label class="text-sm block mb-2">Abstand: <span id="barDistance">40</span>px</label>
+                                <input type="range" min="20" max="80" value="40" oninput="updateValue('progressBar.distanceFromDots', parseInt(this.value))" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Year Label -->
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4">📅 Jahreszahl</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" checked onchange="updateValue('yearLabel.show', this.checked)" class="w-5 h-5" />
+                            <span>Jahreszahl anzeigen</span>
+                        </label>
+                        <div id="yearControls">
+                            <label class="text-sm block mb-2">Schriftgröße: <span id="yearFontSize">32</span>px</label>
+                            <input type="range" min="20" max="50" value="32" oninput="updateValue('yearLabel.fontSize', parseInt(this.value))" />
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="saveCurrentDesign()" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold">
+                    ✓ Design speichern (lokal)
+                </button>
+            </div>
+
+            <!-- Preview Panel - Sticky -->
+            <div class="bg-gray-800 rounded-2xl p-6 shadow-xl h-fit" style="position: sticky; top: 24px;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        👁️ Live-Vorschau
+                    </h2>
+                    <button onclick="downloadPreview()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                        ⬇️ Download
+                    </button>
+                </div>
+                <div class="flex justify-center">
+                    <div style="width: 234px; height: 506px;">
+                        <canvas id="preview" class="w-full h-full rounded-3xl shadow-2xl border-4 border-gray-900"></canvas>
+                    </div>
+                </div>
+                <p class="text-center text-gray-400 text-sm mt-4">
+                    iPhone Format (1170 × 2532 px)
+                </p>
+                
+                <!-- GitHub Integration Info -->
+                <div class="mt-6 p-4 bg-purple-900/30 border border-purple-500/50 rounded-lg">
+                    <h3 class="font-semibold mb-2 flex items-center gap-2">
+                        🚀 GitHub Integration
+                    </h3>
+                    <p class="text-sm text-gray-300 mb-2">
+                        Klicke auf "Zu GitHub senden" um eine designs.json Datei herunterzuladen.
+                    </p>
+                    <p class="text-xs text-gray-400">
+                        Lade die Datei dann auf GitHub hoch und die Wallpapers werden automatisch aktualisiert!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GITHUB_REPO = 'TheIllusionist93/DOCTOR'; // Ändere das zu deinem Repo
+        
+        let designs = {
+            light: {
+                name: 'Light & Minimalistic',
+                colors: { background: '#f5f5f0', pastDays: '#2d2d2d', today: '#4ade80', futureDays: '#d4d4d4', progressBar: '#4ade80', progressBarBg: '#e5e5e5', year: '#9ca3af' },
+                dots: { size: 14, spacing: 42, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 4, distanceFromDots: 40 },
+                yearLabel: { show: true, fontSize: 32, distanceFromBar: 60 },
+            },
+            dark: {
+                name: 'Dark Mode',
+                colors: { background: '#1a1a1a', pastDays: '#ffffff', today: '#60a5fa', futureDays: '#404040', progressBar: '#60a5fa', progressBarBg: '#2d2d2d', year: '#6b7280' },
+                dots: { size: 14, spacing: 42, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 4, distanceFromDots: 40 },
+                yearLabel: { show: true, fontSize: 32, distanceFromBar: 60 },
+            },
+            pink: {
+                name: 'Pink Pastel',
+                colors: { background: '#fff5f5', pastDays: '#4a5568', today: '#f472b6', futureDays: '#e5e7eb', progressBar: '#f472b6', progressBarBg: '#fce7f3', year: '#9ca3af' },
+                dots: { size: 14, spacing: 42, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 4, distanceFromDots: 40 },
+                yearLabel: { show: true, fontSize: 32, distanceFromBar: 60 },
+            },
+            ocean: {
+                name: 'Ocean Blue',
+                colors: { background: '#f0f9ff', pastDays: '#1e3a8a', today: '#0ea5e9', futureDays: '#bfdbfe', progressBar: '#0ea5e9', progressBarBg: '#dbeafe', year: '#64748b' },
+                dots: { size: 14, spacing: 42, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 4, distanceFromDots: 40 },
+                yearLabel: { show: true, fontSize: 32, distanceFromBar: 60 },
+            },
+            minimal: {
+                name: 'Pure Black & White',
+                colors: { background: '#ffffff', pastDays: '#000000', today: '#ef4444', futureDays: '#e5e5e5', progressBar: '#000000', progressBarBg: '#f3f4f6', year: '#9ca3af' },
+                dots: { size: 14, spacing: 42, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 4, distanceFromDots: 40 },
+                yearLabel: { show: true, fontSize: 32, distanceFromBar: 60 },
+            },
+            compact: {
+                name: 'Compact',
+                colors: { background: '#fafaf9', pastDays: '#292524', today: '#22c55e', futureDays: '#d6d3d1', progressBar: '#22c55e', progressBarBg: '#e7e5e4', year: '#78716c' },
+                dots: { size: 12, spacing: 38, columns: 21 },
+                position: { verticalOffset: 100 },
+                progressBar: { show: true, height: 3, distanceFromDots: 35 },
+                yearLabel: { show: true, fontSize: 28, distanceFromBar: 50 },
+            },
+        };
+
+        let currentDesign = 'light';
+        let currentConfig = JSON.parse(JSON.stringify(designs.light));
+
+        function init() {
+            renderDesignButtons();
+            loadDesign('light');
+        }
+
+        function renderDesignButtons() {
+            const container = document.getElementById('designButtons');
+            container.innerHTML = '';
+            Object.keys(designs).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `design-btn p-3 rounded-lg font-semibold transition-all ${currentDesign === key ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`;
+                btn.textContent = designs[key].name;
+                btn.onclick = () => loadDesign(key);
+                container.appendChild(btn);
+            });
+        }
+
+        function loadDesign(key) {
+            currentDesign = key;
+            currentConfig = JSON.parse(JSON.stringify(designs[key]));
+            renderDesignButtons();
+            renderColorControls();
+            updateSliders();
+            generatePreview();
+        }
+
+        function renderColorControls() {
+            const container = document.getElementById('colorControls');
+            container.innerHTML = '';
+            Object.entries(currentConfig.colors).forEach(([key, value]) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between';
+                div.innerHTML = `
+                    <label class="text-sm capitalize">${key.replace(/([A-Z])/g, ' $1')}</label>
+                    <input type="color" value="${value}" onchange="updateColor('${key}', this.value)" class="w-16 h-10 rounded cursor-pointer" />
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateSliders() {
+            document.getElementById('dotSize').textContent = currentConfig.dots.size;
+            document.getElementById('dotSpacing').textContent = currentConfig.dots.spacing;
+            document.getElementById('dotColumns').textContent = currentConfig.dots.columns;
+            document.getElementById('verticalOffset').textContent = currentConfig.position.verticalOffset;
+            document.getElementById('barHeight').textContent = currentConfig.progressBar.height;
+            document.getElementById('barDistance').textContent = currentConfig.progressBar.distanceFromDots;
+            document.getElementById('yearFontSize').textContent = currentConfig.yearLabel.fontSize;
+        }
+
+        function updateColor(key, value) {
+            currentConfig.colors[key] = value;
+            designs[currentDesign].colors[key] = value; // Sofort auch in designs speichern
+            generatePreview();
+        }
+
+        function updateValue(path, value) {
+            const keys = path.split('.');
+            let obj = currentConfig;
+            for (let i = 0; i < keys.length - 1; i++) {
+                obj = obj[keys[i]];
+            }
+            obj[keys[keys.length - 1]] = value;
+            
+            // Auch in designs speichern
+            let designObj = designs[currentDesign];
+            for (let i = 0; i < keys.length - 1; i++) {
+                designObj = designObj[keys[i]];
+            }
+            designObj[keys[keys.length - 1]] = value;
+            
+            updateSliders();
+            generatePreview();
+        }
+
+        function generatePreview() {
+            const canvas = document.getElementById('preview');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1170;
+            canvas.height = 2532;
+
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+            const year = now.getFullYear();
+            const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+            const daysInYear = isLeap ? 366 : 365;
+            const percentage = Math.round((dayOfYear / daysInYear) * 100);
+
+            ctx.fillStyle = currentConfig.colors.background;
+            ctx.fillRect(0, 0, 1170, 2532);
+
+            const cols = currentConfig.dots.columns;
+            const dotSize = currentConfig.dots.size;
+            const spacing = currentConfig.dots.spacing;
+            const gridWidth = (cols - 1) * spacing + dotSize;
+            const gridHeight = Math.ceil(daysInYear / cols) * spacing;
+            const startX = (1170 - gridWidth) / 2;
+            const startY = (2532 - gridHeight) / 2 + currentConfig.position.verticalOffset;
+
+            for (let i = 0; i < daysInYear; i++) {
+                const row = Math.floor(i / cols);
+                const col = i % cols;
+                const x = startX + col * spacing + dotSize / 2;
+                const y = startY + row * spacing + dotSize / 2;
+
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize / 2, 0, Math.PI * 2);
+                
+                if (i < dayOfYear - 1) ctx.fillStyle = currentConfig.colors.pastDays;
+                else if (i === dayOfYear - 1) ctx.fillStyle = currentConfig.colors.today;
+                else ctx.fillStyle = currentConfig.colors.futureDays;
+                
+                ctx.fill();
+            }
+
+            if (currentConfig.progressBar.show) {
+                const barWidth = gridWidth;
+                const barHeight = currentConfig.progressBar.height;
+                const barX = startX;
+                const barY = startY + gridHeight + currentConfig.progressBar.distanceFromDots;
+
+                ctx.fillStyle = currentConfig.colors.progressBarBg;
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+
+                ctx.fillStyle = currentConfig.colors.progressBar;
+                ctx.fillRect(barX, barY, (barWidth * percentage) / 100, barHeight);
+
+                if (currentConfig.yearLabel.show) {
+                    ctx.fillStyle = currentConfig.colors.year;
+                    ctx.font = currentConfig.yearLabel.fontSize + 'px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(year.toString(), 585, barY + currentConfig.yearLabel.distanceFromBar);
+                }
+            }
+        }
+
+        function saveCurrentDesign() {
+            designs[currentDesign] = JSON.parse(JSON.stringify(currentConfig));
+            renderDesignButtons();
+            alert('✓ Design lokal gespeichert!\n\nKlicke auf "Zu GitHub senden" um es dauerhaft zu speichern.');
+        }
+
+        function addNewDesign() {
+            const key = prompt('Design Key (z.B. "sunset"):');
+            if (!key) return;
+            
+            if (designs[key]) {
+                alert('⚠️ Ein Design mit diesem Namen existiert bereits!');
+                return;
+            }
+            
+            const name = prompt('Design Name (z.B. "Sunset Vibes"):', key);
+            if (!name) return;
+            
+            const newDesign = JSON.parse(JSON.stringify(currentConfig));
+            newDesign.name = name;
+            designs[key] = newDesign;
+            renderDesignButtons();
+            loadDesign(key);
+            alert('✓ Neues Design erstellt!\n\nVergiss nicht, es mit "Zu GitHub senden" zu speichern.');
+        }
+
+        function deleteCurrentDesign() {
+            if (Object.keys(designs).length <= 1) {
+                alert('⚠️ Du kannst nicht das letzte Design löschen!');
+                return;
+            }
+            
+            const confirmDelete = confirm(`Möchtest du das Design "${designs[currentDesign].name}" wirklich löschen?`);
+            if (confirmDelete) {
+                delete designs[currentDesign];
+                const firstDesign = Object.keys(designs)[0];
+                loadDesign(firstDesign);
+                alert('✓ Design gelöscht!');
+            }
+        }
+
+        function exportToGitHub() {
+            // Erst das aktuelle Design speichern
+            designs[currentDesign] = JSON.parse(JSON.stringify(currentConfig));
+            
+            // Create JSON file with ALL designs
+            const designsJson = JSON.stringify(designs, null, 2);
+            const blob = new Blob([designsJson], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            // Download the file
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'designs.json';
+            link.click();
+            
+            // Show instructions
+            setTimeout(() => {
+                alert(`✅ designs.json wurde heruntergeladen!
+
+📋 So aktualisierst du GitHub:
+
+1. Gehe zu deinem Repository auf GitHub
+2. Klicke auf "Add file" → "Upload files"
+3. Ziehe die heruntergeladene "designs.json" ins Fenster
+4. Klicke "Commit changes"
+
+Die Wallpapers werden automatisch neu generiert! 🚀`);
+            }, 100);
+        }
+
+        function exportCode() {
+            // Erst das aktuelle Design speichern
+            designs[currentDesign] = JSON.parse(JSON.stringify(currentConfig));
+            
+            const code = JSON.stringify(designs, null, 2);
+            navigator.clipboard.writeText(code);
+            alert('✓ Design-Code in Zwischenablage kopiert!');
+        }
+
+        function downloadPreview() {
+            const canvas = document.getElementById('preview');
+            const link = document.createElement('a');
+            link.download = `wallpaper-${currentDesign}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
