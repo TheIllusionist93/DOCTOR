@@ -8,7 +8,7 @@ const fs = require('fs');
 const PROJECT_CONFIG = {
   totalDays: 75,
   startDate: '2025-11-17',  // Format: YYYY-MM-DD
-  projectName: 'DOCTOR',
+  projectName: 'DOCTOR DT',
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
   weekendWorkDays: [
