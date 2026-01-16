@@ -256,7 +256,6 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillText('DOCTOR', 50, startY);
   ctx.fillText('TOR DOC', 100, startY + lineHeight);
   ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
-  ctx.fillText('DOCTOR', 0, startY + lineHeight * 3);
   
   ctx.restore();
   
