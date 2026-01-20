@@ -53,7 +53,7 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
-    dDay: '#ffffff',            // Grün-Gelb für D-Day
+    dDay: '#b8320f',            // Grün-Gelb für D-Day
     dDayX: '#C8D41E',           // Weiß für das X
     text: '#ffffff',
     textSecondary: '#ffffff',
