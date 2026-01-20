@@ -20,7 +20,7 @@ const PROJECT_CONFIG = {
   events: [
     {
       date: '2026-01-26',  // Format: YYYY-MM-DD
-      title: 'Bergfest'
+      title: 'Bergfest', position: 'top-right'
       // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
     // Weitere Events hier einfügen:
