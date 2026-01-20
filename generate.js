@@ -82,7 +82,7 @@ const DESIGN = {
   bergfest: {
     fontSize: 48,
     lineWidth: 2.5,
-    baseLineLength: 150,  // Längere Linie, damit Text außerhalb des Grids ist
+    baseLineLength: 230,  // Längere Linie, damit Text außerhalb des Grids ist
     textOffsetX: 20,      // Abstand vom Linienende zum Text
     textOffsetY: 10,      // Vertikaler Abstand für top/bottom Positionen
   },
