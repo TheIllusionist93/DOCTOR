@@ -5,57 +5,6 @@ const fs = require('fs');
 registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 
 // ═══════════════════════════════════════════════════════════════════
-// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
-// ═══════════════════════════════════════════════════════════════════
-
-function drawBergfest(ctx, dDayX, dDayY, design) {
-  const lineLength = design.bergfest.lineLength;
-  const textOffsetX = design.bergfest.textOffsetX;
-  
-  // Startpunkt: Rechts vom D-Day Kreuz
-  const startX = dDayX + design.dots.dDaySize / 2 + 8;
-  const startY = dDayY;
-  
-  // Endpunkt der Linie (nach rechts)
-  const endX = startX + lineLength;
-  const endY = startY;
-  
-  // Handgezeichnete, leicht geschwungene Linie
-  ctx.strokeStyle = design.colors.bergfest;
-  ctx.lineWidth = design.bergfest.lineWidth;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  
-  // Bezier-Kurve für leicht geschwungenen Look
-  const controlX = startX + lineLength * 0.5;
-  const controlY = startY - 8; // Leichte Kurve nach oben
-  
-  ctx.quadraticCurveTo(controlX, controlY, endX, endY);
-  ctx.stroke();
-  
-  // Handgeschriebener "Bergfest" Text
-  ctx.fillStyle = design.colors.bergfest;
-  ctx.font = `${design.bergfest.fontSize}px Caveat`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  
-  // Leichter Schatten für bessere Lesbarkeit
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-  ctx.shadowBlur = 3;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 1;
-  
-  ctx.fillText('Bergfest', endX + textOffsetX, endY);
-  
-  // Schatten zurücksetzen
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-}
-
-// ═══════════════════════════════════════════════════════════════════
 // 📋 PROJEKT-KONFIGURATION - HIER EINFACH ANPASSEN
 // ═══════════════════════════════════════════════════════════════════
 
@@ -107,8 +56,9 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
-    dDay: '#C8D41E',            // Grün-Gelb für D-Day
-    dDayX: '#ffffff',           // Weiß für das X
+    dDay: '#b8320f',            // Dunkleres Orange für D-Day
+    dDayX: '#C8D41E',           // Grün-Gelb für das X
+    bergfest: '#C8D41E',        // Grün-Gelb für Bergfest-Linie und Text
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -116,7 +66,13 @@ const DESIGN = {
     size: 24,
     spacing: 60,
     verticalOffset: 100,
-    dDaySize: 36,  // D-Day Punkt ist 1.5x größer
+    dDaySize: 24,  // D-Day Punkt gleiche Größe wie andere
+  },
+  bergfest: {
+    fontSize: 48,
+    lineWidth: 2.5,
+    lineLength: 120,  // Länge der Linie vom Kreuz zum Text
+    textOffsetX: 20,  // Abstand vom Linienende zum Text
   },
   grid: {
     cols: 9,
@@ -290,6 +246,57 @@ function drawDDayX(ctx, centerX, centerY, size, color) {
   ctx.moveTo(centerX + offset, centerY - offset);
   ctx.lineTo(centerX - offset, centerY + offset);
   ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
+// ═══════════════════════════════════════════════════════════════════
+
+function drawBergfest(ctx, dDayX, dDayY, design) {
+  const lineLength = design.bergfest.lineLength;
+  const textOffsetX = design.bergfest.textOffsetX;
+  
+  // Startpunkt: Rechts vom D-Day Kreuz
+  const startX = dDayX + design.dots.dDaySize / 2 + 8;
+  const startY = dDayY;
+  
+  // Endpunkt der Linie (nach rechts)
+  const endX = startX + lineLength;
+  const endY = startY;
+  
+  // Handgezeichnete, leicht geschwungene Linie
+  ctx.strokeStyle = design.colors.bergfest;
+  ctx.lineWidth = design.bergfest.lineWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  
+  // Bezier-Kurve für leicht geschwungenen Look
+  const controlX = startX + lineLength * 0.5;
+  const controlY = startY - 8; // Leichte Kurve nach oben
+  
+  ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+  ctx.stroke();
+  
+  // Handgeschriebener "Bergfest" Text
+  ctx.fillStyle = design.colors.bergfest;
+  ctx.font = `${design.bergfest.fontSize}px Caveat`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  
+  // Leichter Schatten für bessere Lesbarkeit
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 1;
+  
+  ctx.fillText('Bergfest', endX + textOffsetX, endY);
+  
+  // Schatten zurücksetzen
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
 }
 
 // ═══════════════════════════════════════════════════════════════════
