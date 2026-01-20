@@ -363,7 +363,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
   // Positionsabhängige Berechnung
   switch(position) {
     case 'right':
-      startX = eventX + design.dots.size / 2 + 12;
+      startX = eventX + design.dots.size / 2 + 25;
       startY = eventY;
       endX = startX + baseLength;
       endY = startY;
