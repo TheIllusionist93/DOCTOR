@@ -1,129 +1,8 @@
-console.log(`   Start: ${formatDate(shootingDays[0])}`);
-  console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
-  console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
-  console.log(`   Heute ist ${todayIsWorkDay ? 'ein' : 'kein'} Arbeitstag`);
-  
-  if (activeEvents.length > 0) {
-    console.log(`   Aktive Events:`);
-    activeEvents.forEach(event => {
-      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1}, Position: ${event.position})`);
-    });
-  } else {
-    console.log(`   Keine aktiven Events`);
-  }
-  
-  const canvas = createCanvas(1170, 2532);
-  const ctx = canvas.getContext('2d');
-  
-  // Hintergrund
-  ctx.fillStyle = design.colors.background;
-  ctx.fillRect(0, 0, 1170, 2532);
-  
-  // DOCTOR im Hintergrund
-  ctx.save();
-  ctx.fillStyle = design.colors.backgroundText;
-  ctx.font = 'bold 650px Arial';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.globalAlpha = 0.30;
-  
-  const startY = 350;
-  const lineHeight = 550;
-  
-  ctx.fillText('DOCTOR', 50, startY);
-  ctx.fillText('TOR DOC', 100, startY + lineHeight);
-  ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
-  
-  ctx.restore();
 const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
 
 // Font registrieren (Datei muss im gleichen Ordner liegen!)
 registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
-
-// ═══════════════════════════════════════════════════════════════════
-// 🎯 EVENT-LOGIK
-// ═══════════════════════════════════════════════════════════════════
-
-function findEventIndices(shootingDays, events, coords, gridCols, gridRows) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const eventIndices = [];
-  
-  events.forEach(event => {
-    const eventDate = parseDate(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    
-    // Nur Events anzeigen, die heute oder in der Zukunft liegen
-    if (eventDate >= today) {
-      // Finde den Index des Events in den Shooting Days
-      const index = shootingDays.findIndex(shootDay => {
-        const day = new Date(shootDay);
-        day.setHours(0, 0, 0, 0);
-        return day.getTime() === eventDate.getTime();
-      });
-      
-      if (index !== -1) {
-        // Automatische Position berechnen, falls nicht angegeben
-        const position = event.position || calculateAutoPosition(index, coords, gridCols, gridRows);
-        
-        eventIndices.push({
-          index: index,
-          title: event.title,
-          date: event.date,
-          position: position
-        });
-      }
-    }
-  });
-  
-  return eventIndices;
-}
-
-function calculateAutoPosition(index, coords, gridCols, gridRows) {
-  // Finde die Grid-Position des Punktes
-  const coord = coords[index];
-  
-  // Berechne relative Position im Grid (0-1 für x und y)
-  const minX = Math.min(...coords.map(c => c.x));
-  const maxX = Math.max(...coords.map(c => c.x));
-  const minY = Math.min(...coords.map(c => c.y));
-  const maxY = Math.max(...coords.map(c => c.y));
-  
-  const relX = (coord.x - minX) / (maxX - minX);
-  const relY = (coord.y - minY) / (maxY - minY);
-  
-  // Intelligente Positionswahl basierend auf Grid-Position
-  // Priorität: Außen > Diagonal
-  
-  // Linke Kante
-  if (relX < 0.25) {
-    if (relY < 0.33) return 'top-right';
-    if (relY > 0.67) return 'bottom-right';
-    return 'right';
-  }
-  
-  // Rechte Kante
-  if (relX > 0.75) {
-    if (relY < 0.33) return 'top-left';
-    if (relY > 0.67) return 'bottom-left';
-    return 'left';
-  }
-  
-  // Obere Kante (Mitte)
-  if (relY < 0.25) {
-    return 'bottom';
-  }
-  
-  // Untere Kante (Mitte)
-  if (relY > 0.75) {
-    return 'top';
-  }
-  
-  // Zentral - bevorzuge rechts oder links
-  return relX < 0.5 ? 'right' : 'left';
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // 📋 PROJEKT-KONFIGURATION - HIER EINFACH ANPASSEN
@@ -191,9 +70,7 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
-    dDay: '#b8320f',            // Dunkleres Orange für D-Day
-    dDayX: '#C8D41E',           // Grün-Gelb für das X
-    bergfest: '#C8D41E',        // Grün-Gelb für Bergfest-Linie und Text
+    bergfest: '#C8D41E',        // Grün-Gelb für Event-Linie und Text
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -201,7 +78,6 @@ const DESIGN = {
     size: 24,
     spacing: 60,
     verticalOffset: 100,
-    dDaySize: 24,  // D-Day Punkt gleiche Größe wie andere
   },
   bergfest: {
     fontSize: 48,
@@ -310,6 +186,90 @@ function isTodayAWorkDay(shootingDays) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// 🎯 EVENT-LOGIK
+// ═══════════════════════════════════════════════════════════════════
+
+function findEventIndices(shootingDays, events, coords, gridCols, gridRows) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const eventIndices = [];
+  
+  events.forEach(event => {
+    const eventDate = parseDate(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    // Nur Events anzeigen, die heute oder in der Zukunft liegen
+    if (eventDate >= today) {
+      // Finde den Index des Events in den Shooting Days
+      const index = shootingDays.findIndex(shootDay => {
+        const day = new Date(shootDay);
+        day.setHours(0, 0, 0, 0);
+        return day.getTime() === eventDate.getTime();
+      });
+      
+      if (index !== -1) {
+        // Automatische Position berechnen, falls nicht angegeben
+        const position = event.position || calculateAutoPosition(index, coords, gridCols, gridRows);
+        
+        eventIndices.push({
+          index: index,
+          title: event.title,
+          date: event.date,
+          position: position
+        });
+      }
+    }
+  });
+  
+  return eventIndices;
+}
+
+function calculateAutoPosition(index, coords, gridCols, gridRows) {
+  // Finde die Grid-Position des Punktes
+  const coord = coords[index];
+  
+  // Berechne relative Position im Grid (0-1 für x und y)
+  const minX = Math.min(...coords.map(c => c.x));
+  const maxX = Math.max(...coords.map(c => c.x));
+  const minY = Math.min(...coords.map(c => c.y));
+  const maxY = Math.max(...coords.map(c => c.y));
+  
+  const relX = (coord.x - minX) / (maxX - minX);
+  const relY = (coord.y - minY) / (maxY - minY);
+  
+  // Intelligente Positionswahl basierend auf Grid-Position
+  // Priorität: Außen > Diagonal
+  
+  // Linke Kante
+  if (relX < 0.25) {
+    if (relY < 0.33) return 'top-right';
+    if (relY > 0.67) return 'bottom-right';
+    return 'right';
+  }
+  
+  // Rechte Kante
+  if (relX > 0.75) {
+    if (relY < 0.33) return 'top-left';
+    if (relY > 0.67) return 'bottom-left';
+    return 'left';
+  }
+  
+  // Obere Kante (Mitte)
+  if (relY < 0.25) {
+    return 'bottom';
+  }
+  
+  // Untere Kante (Mitte)
+  if (relY > 0.75) {
+    return 'top';
+  }
+  
+  // Zentral - bevorzuge rechts oder links
+  return relX < 0.5 ? 'right' : 'left';
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // 🌀 RECHTECK-SPIRAL-KOORDINATEN (AUSSEN NACH INNEN)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -365,7 +325,7 @@ function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ✖️ D-DAY X ZEICHNEN
+// ✖️ EVENT X ZEICHNEN
 // ═══════════════════════════════════════════════════════════════════
 
 function drawDDayX(ctx, centerX, centerY, size, color) {
@@ -561,8 +521,22 @@ function generateWallpaper(projectConfig, design) {
   const completedDays = currentDayIndex + 1;
   const percentage = Math.round((completedDays / projectConfig.totalDays) * 100);
   
-  // Events finden (nur heute oder in der Zukunft)
-  const activeEvents = findEventIndices(shootingDays, projectConfig.events);
+  // Rechteck-Spiral-Koordinaten generieren
+  const coords = generateRectangleSpiralCoordinates(
+    projectConfig.totalDays,
+    design.grid.cols,
+    design.grid.rows,
+    design.dots.spacing
+  );
+  
+  // Events finden (nur heute oder in der Zukunft) - NACH coords generieren
+  const activeEvents = findEventIndices(
+    shootingDays, 
+    projectConfig.events, 
+    coords, 
+    design.grid.cols, 
+    design.grid.rows
+  );
   
   console.log(`   Start: ${formatDate(shootingDays[0])}`);
   console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
@@ -572,11 +546,12 @@ function generateWallpaper(projectConfig, design) {
   if (activeEvents.length > 0) {
     console.log(`   Aktive Events:`);
     activeEvents.forEach(event => {
-      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1})`);
+      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1}, Position: ${event.position})`);
     });
   } else {
     console.log(`   Keine aktiven Events`);
-  }  
+  }
+  
   const canvas = createCanvas(1170, 2532);
   const ctx = canvas.getContext('2d');
   
@@ -600,14 +575,6 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
   
   ctx.restore();
-  
-  // Rechteck-Spiral-Koordinaten generieren
-  const coords = generateRectangleSpiralCoordinates(
-    projectConfig.totalDays,
-    design.grid.cols,
-    design.grid.rows,
-    design.dots.spacing
-  );
   
   // Bounding Box berechnen
   let minX = Infinity, maxX = -Infinity;
