@@ -1,5 +1,59 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
+
+// Font registrieren (Datei muss im gleichen Ordner liegen!)
+registerFont('./caveat-regular.ttf', { family: 'Caveat' });
+
+// ═══════════════════════════════════════════════════════════════════
+// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
+// ═══════════════════════════════════════════════════════════════════
+
+function drawBergfest(ctx, dDayX, dDayY, design) {
+  const lineLength = design.bergfest.lineLength;
+  const textOffsetX = design.bergfest.textOffsetX;
+  
+  // Startpunkt: Rechts vom D-Day Kreuz
+  const startX = dDayX + design.dots.dDaySize / 2 + 8;
+  const startY = dDayY;
+  
+  // Endpunkt der Linie (nach rechts)
+  const endX = startX + lineLength;
+  const endY = startY;
+  
+  // Handgezeichnete, leicht geschwungene Linie
+  ctx.strokeStyle = design.colors.bergfest;
+  ctx.lineWidth = design.bergfest.lineWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  
+  // Bezier-Kurve für leicht geschwungenen Look
+  const controlX = startX + lineLength * 0.5;
+  const controlY = startY - 8; // Leichte Kurve nach oben
+  
+  ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+  ctx.stroke();
+  
+  // Handgeschriebener "Bergfest" Text
+  ctx.fillStyle = design.colors.bergfest;
+  ctx.font = `${design.bergfest.fontSize}px Caveat`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  
+  // Leichter Schatten für bessere Lesbarkeit
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 1;
+  
+  ctx.fillText('Bergfest', endX + textOffsetX, endY);
+  
+  // Schatten zurücksetzen
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // 📋 PROJEKT-KONFIGURATION - HIER EINFACH ANPASSEN
@@ -53,8 +107,8 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
-    dDay: '#b8320f',            // Grün-Gelb für D-Day
-    dDayX: '#C8D41E',           // Weiß für das X
+    dDay: '#C8D41E',            // Grün-Gelb für D-Day
+    dDayX: '#ffffff',           // Weiß für das X
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -62,7 +116,7 @@ const DESIGN = {
     size: 24,
     spacing: 60,
     verticalOffset: 100,
-    dDaySize: 24,  // D-Day Punkt ist 1.5x größer
+    dDaySize: 36,  // D-Day Punkt ist 1.5x größer
   },
   grid: {
     cols: 9,
@@ -307,17 +361,24 @@ function generateWallpaper(projectConfig, design) {
   const offsetY = (2532 - gridHeight) / 2 - minY + design.dots.verticalOffset;
   
   // Punkte zeichnen
+  let dDayCoords = null; // Speichern für Bergfest-Linie
+  
   coords.forEach(({ x, y }, i) => {
     const centerX = x + offsetX;
     const centerY = y + offsetY;
     const isDDay = i === projectConfig.dDayIndex;
     const dotSize = isDDay ? design.dots.dDaySize : design.dots.size;
     
+    // D-Day Koordinaten speichern
+    if (isDDay) {
+      dDayCoords = { x: centerX, y: centerY };
+    }
+    
     ctx.beginPath();
     ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
     if (isDDay) {
-      // D-Day - immer in Grün-Gelb
+      // D-Day - schlicht wie andere Punkte
       ctx.fillStyle = design.colors.dDay;
     } else if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
@@ -336,6 +397,11 @@ function generateWallpaper(projectConfig, design) {
       drawDDayX(ctx, centerX, centerY, dotSize, design.colors.dDayX);
     }
   });
+  
+  // Bergfest-Linie und Text zeichnen (NACH allen Punkten)
+  if (dDayCoords) {
+    drawBergfest(ctx, dDayCoords.x, dDayCoords.y, design);
+  }
   
   // Fortschrittsbalken
   const barY = offsetY + gridHeight + design.progressBar.marginTop;
