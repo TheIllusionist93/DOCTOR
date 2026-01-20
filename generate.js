@@ -2,10 +2,10 @@ const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
 
 // Font registrieren (Datei muss im gleichen Ordner liegen!)
-registerFont('./caveat-regular.ttf', { family: 'Caveat' });
+registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 
 // ═══════════════════════════════════════════════════════════════════
-// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN (Test)
+// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
 // ═══════════════════════════════════════════════════════════════════
 
 function drawBergfest(ctx, dDayX, dDayY, design) {
