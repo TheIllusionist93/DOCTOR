@@ -5,6 +5,42 @@ const fs = require('fs');
 registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 
 // ═══════════════════════════════════════════════════════════════════
+// 🎯 EVENT-LOGIK
+// ═══════════════════════════════════════════════════════════════════
+
+function findEventIndices(shootingDays, events) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const eventIndices = [];
+  
+  events.forEach(event => {
+    const eventDate = parseDate(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    // Nur Events anzeigen, die heute oder in der Zukunft liegen
+    if (eventDate >= today) {
+      // Finde den Index des Events in den Shooting Days
+      const index = shootingDays.findIndex(shootDay => {
+        const day = new Date(shootDay);
+        day.setHours(0, 0, 0, 0);
+        return day.getTime() === eventDate.getTime();
+      });
+      
+      if (index !== -1) {
+        eventIndices.push({
+          index: index,
+          title: event.title,
+          date: event.date
+        });
+      }
+    }
+  });
+  
+  return eventIndices;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // 📋 PROJEKT-KONFIGURATION - HIER EINFACH ANPASSEN
 // ═══════════════════════════════════════════════════════════════════
 
@@ -12,7 +48,18 @@ const PROJECT_CONFIG = {
   totalDays: 75,
   startDate: '2025-11-17',  // Format: YYYY-MM-DD
   projectName: 'DOCTOR DT',
-  dDayIndex: 37,  // Der 38. Tag (Index 37) = Projekthälfte
+  
+  // Events: Beliebig viele Meilensteine definieren
+  // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
+  events: [
+    {
+      date: '2026-01-26',  // Format: YYYY-MM-DD
+      title: 'Bergfest'
+    },
+    // Weitere Events hier einfügen:
+    // { date: '2026-02-15', title: 'Valentinstag-Dreh' },
+    // { date: '2026-03-10', title: 'Finale Woche' },
+  ],
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
   weekendWorkDays: [
@@ -73,6 +120,10 @@ const DESIGN = {
     lineWidth: 2.5,
     lineLength: 120,  // Länge der Linie vom Kreuz zum Text
     textOffsetX: 20,  // Abstand vom Linienende zum Text
+  },
+  event: {
+    xColor: '#C8D41E',      // Grün-Gelb für Event-X
+    dotColor: '#b8320f',    // Dunkleres Orange für Event-Punkt
   },
   grid: {
     cols: 9,
@@ -249,16 +300,16 @@ function drawDDayX(ctx, centerX, centerY, size, color) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
+// 🏔️ EVENT-LINIE UND TEXT ZEICHNEN
 // ═══════════════════════════════════════════════════════════════════
 
-function drawBergfest(ctx, dDayX, dDayY, design) {
+function drawEventAnnotation(ctx, eventX, eventY, title, design) {
   const lineLength = design.bergfest.lineLength;
   const textOffsetX = design.bergfest.textOffsetX;
   
-  // Startpunkt: Rechts vom D-Day Kreuz
-  const startX = dDayX + design.dots.dDaySize / 2 + 8;
-  const startY = dDayY;
+  // Startpunkt: Rechts vom Event-Kreuz
+  const startX = eventX + design.dots.size / 2 + 8;
+  const startY = eventY;
   
   // Endpunkt der Linie (nach rechts)
   const endX = startX + lineLength;
@@ -280,7 +331,7 @@ function drawBergfest(ctx, dDayX, dDayY, design) {
   ctx.quadraticCurveTo(controlX, controlY, endX, endY);
   ctx.stroke();
   
-  // Handgeschriebener "Bergfest" Text
+  // Handgeschriebener Event-Text
   ctx.fillStyle = design.colors.bergfest;
   ctx.font = `${design.bergfest.fontSize}px Caveat`;
   ctx.textAlign = 'left';
@@ -292,7 +343,7 @@ function drawBergfest(ctx, dDayX, dDayY, design) {
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 1;
   
-  ctx.fillText('Bergfest', endX + textOffsetX, endY);
+  ctx.fillText(title, endX + textOffsetX, endY);
   
   // Schatten zurücksetzen
   ctx.shadowColor = 'transparent';
@@ -311,12 +362,22 @@ function generateWallpaper(projectConfig, design) {
   const completedDays = currentDayIndex + 1;
   const percentage = Math.round((completedDays / projectConfig.totalDays) * 100);
   
+  // Events finden (nur heute oder in der Zukunft)
+  const activeEvents = findEventIndices(shootingDays, projectConfig.events);
+  
   console.log(`   Start: ${formatDate(shootingDays[0])}`);
   console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
   console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
   console.log(`   Heute ist ${todayIsWorkDay ? 'ein' : 'kein'} Arbeitstag`);
-  console.log(`   D-Day: Tag ${projectConfig.dDayIndex + 1} (${formatDate(shootingDays[projectConfig.dDayIndex])})`);
   
+  if (activeEvents.length > 0) {
+    console.log(`   Aktive Events:`);
+    activeEvents.forEach(event => {
+      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1})`);
+    });
+  } else {
+    console.log(`   Keine aktiven Events`);
+  }  
   const canvas = createCanvas(1170, 2532);
   const ctx = canvas.getContext('2d');
   
@@ -368,25 +429,30 @@ function generateWallpaper(projectConfig, design) {
   const offsetY = (2532 - gridHeight) / 2 - minY + design.dots.verticalOffset;
   
   // Punkte zeichnen
-  let dDayCoords = null; // Speichern für Bergfest-Linie
+  const eventCoords = []; // Speichern für Event-Linien
   
   coords.forEach(({ x, y }, i) => {
     const centerX = x + offsetX;
     const centerY = y + offsetY;
-    const isDDay = i === projectConfig.dDayIndex;
-    const dotSize = isDDay ? design.dots.dDaySize : design.dots.size;
+    const isEvent = activeEvents.some(e => e.index === i);
+    const dotSize = design.dots.size;
     
-    // D-Day Koordinaten speichern
-    if (isDDay) {
-      dDayCoords = { x: centerX, y: centerY };
+    // Event-Koordinaten speichern
+    if (isEvent) {
+      const event = activeEvents.find(e => e.index === i);
+      eventCoords.push({
+        x: centerX,
+        y: centerY,
+        title: event.title
+      });
     }
     
     ctx.beginPath();
     ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
-    if (isDDay) {
-      // D-Day - schlicht wie andere Punkte
-      ctx.fillStyle = design.colors.dDay;
+    if (isEvent) {
+      // Event-Punkt
+      ctx.fillStyle = design.event.dotColor;
     } else if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
     } else if (i === completedDays - 1 && todayIsWorkDay) {
@@ -399,16 +465,16 @@ function generateWallpaper(projectConfig, design) {
     
     ctx.fill();
     
-    // X auf D-Day zeichnen
-    if (isDDay) {
-      drawDDayX(ctx, centerX, centerY, dotSize, design.colors.dDayX);
+    // X auf Event-Punkten zeichnen
+    if (isEvent) {
+      drawDDayX(ctx, centerX, centerY, dotSize, design.event.xColor);
     }
   });
   
-  // Bergfest-Linie und Text zeichnen (NACH allen Punkten)
-  if (dDayCoords) {
-    drawBergfest(ctx, dDayCoords.x, dDayCoords.y, design);
-  }
+  // Event-Linien und Texte zeichnen (NACH allen Punkten)
+  eventCoords.forEach(event => {
+    drawEventAnnotation(ctx, event.x, event.y, event.title, design);
+  });
   
   // Fortschrittsbalken
   const barY = offsetY + gridHeight + design.progressBar.marginTop;
