@@ -1,3 +1,40 @@
+console.log(`   Start: ${formatDate(shootingDays[0])}`);
+  console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
+  console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
+  console.log(`   Heute ist ${todayIsWorkDay ? 'ein' : 'kein'} Arbeitstag`);
+  
+  if (activeEvents.length > 0) {
+    console.log(`   Aktive Events:`);
+    activeEvents.forEach(event => {
+      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1}, Position: ${event.position})`);
+    });
+  } else {
+    console.log(`   Keine aktiven Events`);
+  }
+  
+  const canvas = createCanvas(1170, 2532);
+  const ctx = canvas.getContext('2d');
+  
+  // Hintergrund
+  ctx.fillStyle = design.colors.background;
+  ctx.fillRect(0, 0, 1170, 2532);
+  
+  // DOCTOR im Hintergrund
+  ctx.save();
+  ctx.fillStyle = design.colors.backgroundText;
+  ctx.font = 'bold 650px Arial';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.globalAlpha = 0.30;
+  
+  const startY = 350;
+  const lineHeight = 550;
+  
+  ctx.fillText('DOCTOR', 50, startY);
+  ctx.fillText('TOR DOC', 100, startY + lineHeight);
+  ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
+  
+  ctx.restore();
 const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
 
@@ -8,7 +45,7 @@ registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 // 🎯 EVENT-LOGIK
 // ═══════════════════════════════════════════════════════════════════
 
-function findEventIndices(shootingDays, events) {
+function findEventIndices(shootingDays, events, coords, gridCols, gridRows) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -28,16 +65,64 @@ function findEventIndices(shootingDays, events) {
       });
       
       if (index !== -1) {
+        // Automatische Position berechnen, falls nicht angegeben
+        const position = event.position || calculateAutoPosition(index, coords, gridCols, gridRows);
+        
         eventIndices.push({
           index: index,
           title: event.title,
-          date: event.date
+          date: event.date,
+          position: position
         });
       }
     }
   });
   
   return eventIndices;
+}
+
+function calculateAutoPosition(index, coords, gridCols, gridRows) {
+  // Finde die Grid-Position des Punktes
+  const coord = coords[index];
+  
+  // Berechne relative Position im Grid (0-1 für x und y)
+  const minX = Math.min(...coords.map(c => c.x));
+  const maxX = Math.max(...coords.map(c => c.x));
+  const minY = Math.min(...coords.map(c => c.y));
+  const maxY = Math.max(...coords.map(c => c.y));
+  
+  const relX = (coord.x - minX) / (maxX - minX);
+  const relY = (coord.y - minY) / (maxY - minY);
+  
+  // Intelligente Positionswahl basierend auf Grid-Position
+  // Priorität: Außen > Diagonal
+  
+  // Linke Kante
+  if (relX < 0.25) {
+    if (relY < 0.33) return 'top-right';
+    if (relY > 0.67) return 'bottom-right';
+    return 'right';
+  }
+  
+  // Rechte Kante
+  if (relX > 0.75) {
+    if (relY < 0.33) return 'top-left';
+    if (relY > 0.67) return 'bottom-left';
+    return 'left';
+  }
+  
+  // Obere Kante (Mitte)
+  if (relY < 0.25) {
+    return 'bottom';
+  }
+  
+  // Untere Kante (Mitte)
+  if (relY > 0.75) {
+    return 'top';
+  }
+  
+  // Zentral - bevorzuge rechts oder links
+  return relX < 0.5 ? 'right' : 'left';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -51,14 +136,17 @@ const PROJECT_CONFIG = {
   
   // Events: Beliebig viele Meilensteine definieren
   // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
+  // Position ist optional - wird automatisch berechnet, wenn nicht angegeben
+  // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
+      date: '2026-01-26',  // Format: YYYY-MM-DD
       title: 'Bergfest'
+      // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
     // Weitere Events hier einfügen:
-    // { date: '2026-02-15', title: 'Valentinstag-Dreh' },
-    // { date: '2026-03-10', title: 'Finale Woche' },
+    // { date: '2026-02-15', title: 'Valentinstag-Dreh', position: 'top' },
+    // { date: '2026-03-10', title: 'Finale Woche' },  // Automatische Platzierung
   ],
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
@@ -118,8 +206,9 @@ const DESIGN = {
   bergfest: {
     fontSize: 48,
     lineWidth: 2.5,
-    lineLength: 120,  // Länge der Linie vom Kreuz zum Text
-    textOffsetX: 20,  // Abstand vom Linienende zum Text
+    baseLineLength: 80,   // Basis-Länge der Linie
+    textOffsetX: 20,      // Abstand vom Linienende zum Text
+    textOffsetY: 10,      // Vertikaler Abstand für top/bottom Positionen
   },
   event: {
     xColor: '#C8D41E',      // Grün-Gelb für Event-X
@@ -303,17 +392,132 @@ function drawDDayX(ctx, centerX, centerY, size, color) {
 // 🏔️ EVENT-LINIE UND TEXT ZEICHNEN
 // ═══════════════════════════════════════════════════════════════════
 
-function drawEventAnnotation(ctx, eventX, eventY, title, design) {
-  const lineLength = design.bergfest.lineLength;
+function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
+  const baseLength = design.bergfest.baseLineLength;
   const textOffsetX = design.bergfest.textOffsetX;
+  const textOffsetY = design.bergfest.textOffsetY;
   
-  // Startpunkt: Rechts vom Event-Kreuz
-  const startX = eventX + design.dots.size / 2 + 8;
-  const startY = eventY;
+  let startX, startY, endX, endY, controlX, controlY;
+  let textX, textY, textAlign, textBaseline;
   
-  // Endpunkt der Linie (nach rechts)
-  const endX = startX + lineLength;
-  const endY = startY;
+  // Positionsabhängige Berechnung
+  switch(position) {
+    case 'right':
+      startX = eventX + design.dots.size / 2 + 8;
+      startY = eventY;
+      endX = startX + baseLength;
+      endY = startY;
+      controlX = startX + baseLength * 0.5;
+      controlY = startY - 8;
+      textX = endX + textOffsetX;
+      textY = endY;
+      textAlign = 'left';
+      textBaseline = 'middle';
+      break;
+      
+    case 'left':
+      startX = eventX - design.dots.size / 2 - 8;
+      startY = eventY;
+      endX = startX - baseLength;
+      endY = startY;
+      controlX = startX - baseLength * 0.5;
+      controlY = startY - 8;
+      textX = endX - textOffsetX;
+      textY = endY;
+      textAlign = 'right';
+      textBaseline = 'middle';
+      break;
+      
+    case 'top':
+      startX = eventX;
+      startY = eventY - design.dots.size / 2 - 8;
+      endX = startX;
+      endY = startY - baseLength;
+      controlX = startX + 8;
+      controlY = startY - baseLength * 0.5;
+      textX = endX;
+      textY = endY - textOffsetY;
+      textAlign = 'center';
+      textBaseline = 'bottom';
+      break;
+      
+    case 'bottom':
+      startX = eventX;
+      startY = eventY + design.dots.size / 2 + 8;
+      endX = startX;
+      endY = startY + baseLength;
+      controlX = startX + 8;
+      controlY = startY + baseLength * 0.5;
+      textX = endX;
+      textY = endY + textOffsetY;
+      textAlign = 'center';
+      textBaseline = 'top';
+      break;
+      
+    case 'top-right':
+      startX = eventX + design.dots.size / 2 * 0.7;
+      startY = eventY - design.dots.size / 2 * 0.7;
+      endX = startX + baseLength * 0.7;
+      endY = startY - baseLength * 0.7;
+      controlX = startX + baseLength * 0.4;
+      controlY = startY - baseLength * 0.3;
+      textX = endX + textOffsetX * 0.7;
+      textY = endY;
+      textAlign = 'left';
+      textBaseline = 'middle';
+      break;
+      
+    case 'top-left':
+      startX = eventX - design.dots.size / 2 * 0.7;
+      startY = eventY - design.dots.size / 2 * 0.7;
+      endX = startX - baseLength * 0.7;
+      endY = startY - baseLength * 0.7;
+      controlX = startX - baseLength * 0.4;
+      controlY = startY - baseLength * 0.3;
+      textX = endX - textOffsetX * 0.7;
+      textY = endY;
+      textAlign = 'right';
+      textBaseline = 'middle';
+      break;
+      
+    case 'bottom-right':
+      startX = eventX + design.dots.size / 2 * 0.7;
+      startY = eventY + design.dots.size / 2 * 0.7;
+      endX = startX + baseLength * 0.7;
+      endY = startY + baseLength * 0.7;
+      controlX = startX + baseLength * 0.4;
+      controlY = startY + baseLength * 0.3;
+      textX = endX + textOffsetX * 0.7;
+      textY = endY;
+      textAlign = 'left';
+      textBaseline = 'middle';
+      break;
+      
+    case 'bottom-left':
+      startX = eventX - design.dots.size / 2 * 0.7;
+      startY = eventY + design.dots.size / 2 * 0.7;
+      endX = startX - baseLength * 0.7;
+      endY = startY + baseLength * 0.7;
+      controlX = startX - baseLength * 0.4;
+      controlY = startY + baseLength * 0.3;
+      textX = endX - textOffsetX * 0.7;
+      textY = endY;
+      textAlign = 'right';
+      textBaseline = 'middle';
+      break;
+      
+    default: // Fallback auf 'right'
+      startX = eventX + design.dots.size / 2 + 8;
+      startY = eventY;
+      endX = startX + baseLength;
+      endY = startY;
+      controlX = startX + baseLength * 0.5;
+      controlY = startY - 8;
+      textX = endX + textOffsetX;
+      textY = endY;
+      textAlign = 'left';
+      textBaseline = 'middle';
+  }
   
   // Handgezeichnete, leicht geschwungene Linie
   ctx.strokeStyle = design.colors.bergfest;
@@ -323,19 +527,14 @@ function drawEventAnnotation(ctx, eventX, eventY, title, design) {
   
   ctx.beginPath();
   ctx.moveTo(startX, startY);
-  
-  // Bezier-Kurve für leicht geschwungenen Look
-  const controlX = startX + lineLength * 0.5;
-  const controlY = startY - 8; // Leichte Kurve nach oben
-  
   ctx.quadraticCurveTo(controlX, controlY, endX, endY);
   ctx.stroke();
   
   // Handgeschriebener Event-Text
   ctx.fillStyle = design.colors.bergfest;
   ctx.font = `${design.bergfest.fontSize}px Caveat`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
+  ctx.textAlign = textAlign;
+  ctx.textBaseline = textBaseline;
   
   // Leichter Schatten für bessere Lesbarkeit
   ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
@@ -343,7 +542,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, design) {
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 1;
   
-  ctx.fillText(title, endX + textOffsetX, endY);
+  ctx.fillText(title, textX, textY);
   
   // Schatten zurücksetzen
   ctx.shadowColor = 'transparent';
@@ -443,7 +642,8 @@ function generateWallpaper(projectConfig, design) {
       eventCoords.push({
         x: centerX,
         y: centerY,
-        title: event.title
+        title: event.title,
+        position: event.position
       });
     }
     
@@ -473,7 +673,7 @@ function generateWallpaper(projectConfig, design) {
   
   // Event-Linien und Texte zeichnen (NACH allen Punkten)
   eventCoords.forEach(event => {
-    drawEventAnnotation(ctx, event.x, event.y, event.title, design);
+    drawEventAnnotation(ctx, event.x, event.y, event.title, event.position, design);
   });
   
   // Fortschrittsbalken
