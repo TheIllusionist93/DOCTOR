@@ -5,7 +5,7 @@ const fs = require('fs');
 registerFont('./caveat-regular.ttf', { family: 'Caveat' });
 
 // ═══════════════════════════════════════════════════════════════════
-// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN
+// 🏔️ BERGFEST-LINIE UND TEXT ZEICHNEN (Test)
 // ═══════════════════════════════════════════════════════════════════
 
 function drawBergfest(ctx, dDayX, dDayY, design) {
