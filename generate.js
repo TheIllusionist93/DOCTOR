@@ -9,6 +9,7 @@ const PROJECT_CONFIG = {
   totalDays: 75,
   startDate: '2025-11-17',  // Format: YYYY-MM-DD
   projectName: 'DOCTOR DT',
+  dDayIndex: 37,  // Der 38. Tag (Index 37) = Projekthälfte
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
   weekendWorkDays: [
@@ -52,13 +53,16 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
+    dDay: '#C8D41E',            // Grün-Gelb für D-Day
+    dDayX: '#ffffff',           // Weiß für das X
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
   dots: {
     size: 24,
     spacing: 60,
-    verticalOffset: 100,  // ANPASSEN: Positive Zahl = nach unten, negative = nach oben
+    verticalOffset: 100,
+    dDaySize: 36,  // D-Day Punkt ist 1.5x größer
   },
   grid: {
     cols: 9,
@@ -133,11 +137,11 @@ function getCurrentDayIndex(shootingDays) {
     shootDay.setHours(0, 0, 0, 0);
     
     if (shootDay.getTime() === today.getTime()) {
-      return i; // Heute ist ein Arbeitstag
+      return i;
     }
     
     if (shootDay > today) {
-      return i - 1; // Heute ist kein Arbeitstag
+      return i - 1;
     }
   }
   
@@ -162,7 +166,6 @@ function isTodayAWorkDay(shootingDays) {
 function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
   const coords = [];
   
-  // Grid-Positionen erstellen
   const grid = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -175,26 +178,22 @@ function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
     }
   }
   
-  // Spirale von außen nach innen
   let left = 0, right = cols - 1;
   let top = 0, bottom = rows - 1;
   
   while (coords.length < totalDots && left <= right && top <= bottom) {
-    // Oben von links nach rechts
     for (let col = left; col <= right && coords.length < totalDots; col++) {
       const pos = grid.find(p => p.row === top && p.col === col);
       if (pos) coords.push({ x: pos.x, y: pos.y });
     }
     top++;
     
-    // Rechts von oben nach unten
     for (let row = top; row <= bottom && coords.length < totalDots; row++) {
       const pos = grid.find(p => p.row === row && p.col === right);
       if (pos) coords.push({ x: pos.x, y: pos.y });
     }
     right--;
     
-    // Unten von rechts nach links
     if (top <= bottom) {
       for (let col = right; col >= left && coords.length < totalDots; col--) {
         const pos = grid.find(p => p.row === bottom && p.col === col);
@@ -203,7 +202,6 @@ function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
       bottom--;
     }
     
-    // Links von unten nach oben
     if (left <= right) {
       for (let row = bottom; row >= top && coords.length < totalDots; row--) {
         const pos = grid.find(p => p.row === row && p.col === left);
@@ -214,6 +212,30 @@ function generateRectangleSpiralCoordinates(totalDots, cols, rows, dotSpacing) {
   }
   
   return coords;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✖️ D-DAY X ZEICHNEN
+// ═══════════════════════════════════════════════════════════════════
+
+function drawDDayX(ctx, centerX, centerY, size, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  
+  const offset = size * 0.5;
+  
+  // Diagonal von links-oben nach rechts-unten
+  ctx.beginPath();
+  ctx.moveTo(centerX - offset, centerY - offset);
+  ctx.lineTo(centerX + offset, centerY + offset);
+  ctx.stroke();
+  
+  // Diagonal von rechts-oben nach links-unten
+  ctx.beginPath();
+  ctx.moveTo(centerX + offset, centerY - offset);
+  ctx.lineTo(centerX - offset, centerY + offset);
+  ctx.stroke();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -232,8 +254,8 @@ function generateWallpaper(projectConfig, design) {
   console.log(`   Ende: ${formatDate(shootingDays[shootingDays.length - 1])}`);
   console.log(`   Fortschritt: ${completedDays}/${projectConfig.totalDays} (${percentage}%)`);
   console.log(`   Heute ist ${todayIsWorkDay ? 'ein' : 'kein'} Arbeitstag`);
+  console.log(`   D-Day: Tag ${projectConfig.dDayIndex + 1} (${formatDate(shootingDays[projectConfig.dDayIndex])})`);
   
-  // Canvas erstellen
   const canvas = createCanvas(1170, 2532);
   const ctx = canvas.getContext('2d');
   
@@ -241,15 +263,14 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
   
-  // DOCTOR im Hintergrund - RIESIGE BUCHSTABEN, MEHRERE ZEILEN
+  // DOCTOR im Hintergrund
   ctx.save();
   ctx.fillStyle = design.colors.backgroundText;
   ctx.font = 'bold 650px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.globalAlpha = 0.30; // Besser sichtbar
+  ctx.globalAlpha = 0.30;
   
-  // DOCTOR über mehrere Zeilen verteilt, leicht versetzt
   const startY = 350;
   const lineHeight = 550;
   
@@ -289,25 +310,31 @@ function generateWallpaper(projectConfig, design) {
   coords.forEach(({ x, y }, i) => {
     const centerX = x + offsetX;
     const centerY = y + offsetY;
+    const isDDay = i === projectConfig.dDayIndex;
+    const dotSize = isDDay ? design.dots.dDaySize : design.dots.size;
     
     ctx.beginPath();
-    ctx.arc(centerX, centerY, design.dots.size / 2, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
-    if (i < completedDays - 1) {
-      // Vergangene Tage
+    if (isDDay) {
+      // D-Day - immer in Grün-Gelb
+      ctx.fillStyle = design.colors.dDay;
+    } else if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
     } else if (i === completedDays - 1 && todayIsWorkDay) {
-      // Heute - nur wenn es ein Arbeitstag ist
       ctx.fillStyle = design.colors.today;
     } else if (i === completedDays - 1 && !todayIsWorkDay) {
-      // Heute ist kein Arbeitstag - als vergangen markieren
       ctx.fillStyle = design.colors.pastDays;
     } else {
-      // Zukünftige Tage
       ctx.fillStyle = design.colors.futureDays;
     }
     
     ctx.fill();
+    
+    // X auf D-Day zeichnen
+    if (isDDay) {
+      drawDDayX(ctx, centerX, centerY, dotSize, design.colors.dDayX);
+    }
   });
   
   // Fortschrittsbalken
@@ -315,22 +342,19 @@ function generateWallpaper(projectConfig, design) {
   const barWidth = 700;
   const barX = (1170 - barWidth) / 2;
   
-  // Hintergrund
   ctx.fillStyle = design.colors.progressBarBg;
   ctx.fillRect(barX, barY, barWidth, design.progressBar.height);
   
-  // Fortschritt
   ctx.fillStyle = design.colors.progressBar;
   ctx.fillRect(barX, barY, (barWidth * percentage) / 100, design.progressBar.height);
   
-  // Text - GRÖSSER und BESSER SICHTBAR
+  // Text
   const textY = barY + design.text.marginTop;
   ctx.fillStyle = design.colors.text;
   ctx.font = `bold ${design.text.fontSize}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
-  // Leichter Schatten für bessere Lesbarkeit
   ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
   ctx.shadowBlur = 4;
   ctx.shadowOffsetX = 0;
