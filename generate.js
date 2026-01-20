@@ -53,8 +53,8 @@ const DESIGN = {
     futureDays: '#B8320F',      // Dunkleres Orange
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
-    dDay: '#C8D41E',            // Grün-Gelb für D-Day
-    dDayX: '#ffffff',           // Weiß für das X
+    dDay: '#ffffff',            // Grün-Gelb für D-Day
+    dDayX: '#C8D41E',           // Weiß für das X
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -62,7 +62,7 @@ const DESIGN = {
     size: 24,
     spacing: 60,
     verticalOffset: 100,
-    dDaySize: 36,  // D-Day Punkt ist 1.5x größer
+    dDaySize: 24,  // D-Day Punkt ist 1.5x größer
   },
   grid: {
     cols: 9,
