@@ -53,7 +53,7 @@ const PROJECT_CONFIG = {
   // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
   events: [
     {
-      date: '2026-01-26',  // Format: YYYY-MM-DD
+      date: '2026-01-23',  // Format: YYYY-MM-DD
       title: 'Bergfest'
     },
     // Weitere Events hier einfügen:
