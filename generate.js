@@ -53,6 +53,7 @@ const PROJECT_CONFIG = {
     '2026-01-05',
     '2026-01-06',
     '2026-01-19',
+    '2026-01-23',
     // Weitere Daten hier einfügen
   ]
 };
