@@ -19,8 +19,8 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
-      title: 'Bergfest', position: 'top-right'
+      date: '2026-01-26',  // Format: YYYY-MM-DD
+      title: 'Bergfest'
       // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
     // Weitere Events hier einfügen:
@@ -82,7 +82,7 @@ const DESIGN = {
   bergfest: {
     fontSize: 48,
     lineWidth: 2.5,
-    baseLineLength: 230,  // Längere Linie, damit Text außerhalb des Grids ist
+    baseLineLength: 150,  // Längere Linie, damit Text außerhalb des Grids ist
     textOffsetX: 20,      // Abstand vom Linienende zum Text
     textOffsetY: 10,      // Vertikaler Abstand für top/bottom Positionen
   },
@@ -189,7 +189,7 @@ function isTodayAWorkDay(shootingDays) {
 // 🎯 EVENT-LOGIK
 // ═══════════════════════════════════════════════════════════════════
 
-function findEventIndices(shootingDays, events, coords, gridCols, gridRows) {
+function findEventIndices(shootingDays, events, coords, gridCols, gridRows, projectConfig) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -209,20 +209,120 @@ function findEventIndices(shootingDays, events, coords, gridCols, gridRows) {
       });
       
       if (index !== -1) {
-        // Automatische Position berechnen, falls nicht angegeben
+        // Event fällt auf einen Arbeitstag
         const position = event.position || calculateAutoPosition(index, coords, gridCols, gridRows);
         
         eventIndices.push({
           index: index,
           title: event.title,
           date: event.date,
-          position: position
+          position: position,
+          isWorkDay: true
         });
+      } else {
+        // Event fällt NICHT auf einen Arbeitstag - prüfe ob es ein freier Tag ist
+        if (!isWorkDay(eventDate, projectConfig)) {
+          // Finde die benachbarten Arbeitstage
+          const neighbors = findNeighboringWorkDays(eventDate, shootingDays);
+          
+          if (neighbors) {
+            const position = event.position || calculateAutoPositionBetween(
+              neighbors.beforeIndex, 
+              neighbors.afterIndex, 
+              coords, 
+              gridCols, 
+              gridRows
+            );
+            
+            eventIndices.push({
+              beforeIndex: neighbors.beforeIndex,
+              afterIndex: neighbors.afterIndex,
+              title: event.title,
+              date: event.date,
+              position: position,
+              isWorkDay: false
+            });
+          }
+        }
       }
     }
   });
   
   return eventIndices;
+}
+
+function findNeighboringWorkDays(freeDate, shootingDays) {
+  let beforeIndex = -1;
+  let afterIndex = -1;
+  
+  // Finde den letzten Arbeitstag VOR dem freien Tag
+  for (let i = shootingDays.length - 1; i >= 0; i--) {
+    const shootDay = new Date(shootingDays[i]);
+    shootDay.setHours(0, 0, 0, 0);
+    
+    if (shootDay < freeDate) {
+      beforeIndex = i;
+      break;
+    }
+  }
+  
+  // Finde den ersten Arbeitstag NACH dem freien Tag
+  for (let i = 0; i < shootingDays.length; i++) {
+    const shootDay = new Date(shootingDays[i]);
+    shootDay.setHours(0, 0, 0, 0);
+    
+    if (shootDay > freeDate) {
+      afterIndex = i;
+      break;
+    }
+  }
+  
+  if (beforeIndex !== -1 && afterIndex !== -1) {
+    return { beforeIndex, afterIndex };
+  }
+  
+  return null;
+}
+
+function calculateAutoPositionBetween(beforeIndex, afterIndex, coords, gridCols, gridRows) {
+  // Berechne Position basierend auf dem Mittelpunkt zwischen den beiden Punkten
+  const beforeCoord = coords[beforeIndex];
+  const afterCoord = coords[afterIndex];
+  
+  const midX = (beforeCoord.x + afterCoord.x) / 2;
+  const midY = (beforeCoord.y + afterCoord.y) / 2;
+  
+  // Berechne relative Position
+  const minX = Math.min(...coords.map(c => c.x));
+  const maxX = Math.max(...coords.map(c => c.x));
+  const minY = Math.min(...coords.map(c => c.y));
+  const maxY = Math.max(...coords.map(c => c.y));
+  
+  const relX = (midX - minX) / (maxX - minX);
+  const relY = (midY - minY) / (maxY - minY);
+  
+  // Gleiche Logik wie bei normalen Events
+  if (relX < 0.25) {
+    if (relY < 0.33) return 'top-right';
+    if (relY > 0.67) return 'bottom-right';
+    return 'right';
+  }
+  
+  if (relX > 0.75) {
+    if (relY < 0.33) return 'top-left';
+    if (relY > 0.67) return 'bottom-left';
+    return 'left';
+  }
+  
+  if (relY < 0.25) {
+    return 'bottom';
+  }
+  
+  if (relY > 0.75) {
+    return 'top';
+  }
+  
+  return relX < 0.5 ? 'right' : 'left';
 }
 
 function calculateAutoPosition(index, coords, gridCols, gridRows) {
@@ -363,7 +463,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
   // Positionsabhängige Berechnung
   switch(position) {
     case 'right':
-      startX = eventX + design.dots.size / 2 + 25;
+      startX = eventX + design.dots.size / 2 + 8;
       startY = eventY;
       endX = startX + baseLength;
       endY = startY;
@@ -535,7 +635,8 @@ function generateWallpaper(projectConfig, design) {
     projectConfig.events, 
     coords, 
     design.grid.cols, 
-    design.grid.rows
+    design.grid.rows,
+    projectConfig
   );
   
   console.log(`   Start: ${formatDate(shootingDays[0])}`);
@@ -546,7 +647,11 @@ function generateWallpaper(projectConfig, design) {
   if (activeEvents.length > 0) {
     console.log(`   Aktive Events:`);
     activeEvents.forEach(event => {
-      console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1}, Position: ${event.position})`);
+      if (event.isWorkDay) {
+        console.log(`     - ${event.title} am ${event.date} (Tag ${event.index + 1}, Position: ${event.position})`);
+      } else {
+        console.log(`     - ${event.title} am ${event.date} (Freier Tag zwischen Tag ${event.beforeIndex + 1} und ${event.afterIndex + 1}, Position: ${event.position})`);
+      }
     });
   } else {
     console.log(`   Keine aktiven Events`);
@@ -600,17 +705,18 @@ function generateWallpaper(projectConfig, design) {
   coords.forEach(({ x, y }, i) => {
     const centerX = x + offsetX;
     const centerY = y + offsetY;
-    const isEvent = activeEvents.some(e => e.index === i);
+    const isEvent = activeEvents.some(e => e.isWorkDay && e.index === i);
     const dotSize = design.dots.size;
     
-    // Event-Koordinaten speichern
+    // Event-Koordinaten speichern (nur für Arbeitstag-Events)
     if (isEvent) {
-      const event = activeEvents.find(e => e.index === i);
+      const event = activeEvents.find(e => e.isWorkDay && e.index === i);
       eventCoords.push({
         x: centerX,
         y: centerY,
         title: event.title,
-        position: event.position
+        position: event.position,
+        isWorkDay: true
       });
     }
     
@@ -635,6 +741,25 @@ function generateWallpaper(projectConfig, design) {
     // X auf Event-Punkten zeichnen
     if (isEvent) {
       drawDDayX(ctx, centerX, centerY, dotSize, design.event.xColor);
+    }
+  });
+  
+  // Freie-Tag-Events: Position zwischen zwei Punkten berechnen
+  activeEvents.forEach(event => {
+    if (!event.isWorkDay) {
+      const beforeCoord = coords[event.beforeIndex];
+      const afterCoord = coords[event.afterIndex];
+      
+      const midX = (beforeCoord.x + afterCoord.x) / 2 + offsetX;
+      const midY = (beforeCoord.y + afterCoord.y) / 2 + offsetY;
+      
+      eventCoords.push({
+        x: midX,
+        y: midY,
+        title: event.title,
+        position: event.position,
+        isWorkDay: false
+      });
     }
   });
   
