@@ -20,8 +20,7 @@ const PROJECT_CONFIG = {
   events: [
     {
       date: '2026-01-23',  // Format: YYYY-MM-DD
-      title: 'Bergfest', position:'top-right',
-      date: '2026-02-23', title: 'AZV-Tag', position: 'top-left'
+      title: 'Bergfest', position:'top-right'
       // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
     // Weitere Events hier einfügen:
@@ -54,7 +53,6 @@ const PROJECT_CONFIG = {
     '2026-01-05',
     '2026-01-06',
     '2026-01-19',
-    '2026-02-23',
     // Weitere Daten hier einfügen
   ]
 };
