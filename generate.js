@@ -19,7 +19,7 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-22',  // Format: YYYY-MM-DD
+      date: '2026-01-23',  // Format: YYYY-MM-DD
       title: 'Bergfest',
       position: 'top-right'
     },
@@ -682,8 +682,8 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
     const textWidth = metrics.width;
     
     // Unterstreichungen TIEFER (weiter unten vom Text)
-    const underlineY1 = textY + design.bergfest.fontSize * 0.35;
-    const underlineY2 = textY + design.bergfest.fontSize * 0.45;
+    const underlineY1 = textY + design.bergfest.fontSize * 0.55;
+    const underlineY2 = textY + design.bergfest.fontSize * 0.65;
     
     ctx.strokeStyle = textColor;
     ctx.lineWidth = 2.5;
