@@ -19,9 +19,9 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-22',  // Format: YYYY-MM-DD
-      title: 'Bergfest', position: 'top-right'
-      // position: 'right'  // Optional: Überschreibt automatische Platzierung
+      date: '2026-01-23',  // Format: YYYY-MM-DD
+      title: 'Bergfest',
+      position: 'top-right'
     },
     // Weitere Events hier einfügen:
     // { date: '2026-02-15', title: 'Valentinstag-Dreh', position: 'top' },
@@ -71,7 +71,7 @@ const DESIGN = {
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
     bergfest: '#C8D41E',        // Grün-Gelb für Event-Linie und Text
-    eventToday: '#FFD700',      // Kräftiges Gelb (Gold) für heutiges Event
+    highlighter: '#FF10F0',     // Neon-Pink/Magenta für Textmarker
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -462,9 +462,12 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
   const textOffsetX = design.bergfest.textOffsetX;
   const textOffsetY = design.bergfest.textOffsetY;
   
-  // Farbe abhängig davon, ob Event heute ist
-  const lineColor = isToday ? design.colors.eventToday : design.colors.bergfest;
-  const textColor = isToday ? design.colors.eventToday : design.colors.bergfest;
+  // Farbe für Linie bleibt immer Grün-Gelb
+  const lineColor = design.colors.bergfest;
+  const textColor = design.colors.bergfest;
+  
+  // Titel mit Ausrufezeichen wenn heute
+  const displayTitle = isToday ? `${title}!!` : title;
   
   let startX, startY, endX, endY, controlX, controlY;
   let textX, textY, textAlign, textBaseline;
@@ -599,7 +602,41 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
   ctx.quadraticCurveTo(controlX, controlY, endX, endY);
   ctx.stroke();
   
-  // Handgeschriebener Event-Text
+  // Textmarker-Effekt wenn Event heute ist (VOR dem Text!)
+  if (isToday) {
+    ctx.font = `${design.bergfest.fontSize}px Caveat`;
+    ctx.textAlign = textAlign;
+    ctx.textBaseline = textBaseline;
+    
+    const metrics = ctx.measureText(displayTitle);
+    const textWidth = metrics.width;
+    const textHeight = design.bergfest.fontSize;
+    
+    // Textmarker-Balken Position berechnen
+    let highlightX, highlightY, highlightWidth;
+    
+    if (textAlign === 'left') {
+      highlightX = textX - 5;
+      highlightWidth = textWidth + 10;
+    } else if (textAlign === 'right') {
+      highlightX = textX - textWidth - 5;
+      highlightWidth = textWidth + 10;
+    } else { // center
+      highlightX = textX - textWidth / 2 - 5;
+      highlightWidth = textWidth + 10;
+    }
+    
+    highlightY = textY - textHeight * 0.4;
+    const highlightHeight = textHeight * 0.8;
+    
+    // Textmarker zeichnen (leicht transparent)
+    ctx.fillStyle = design.colors.highlighter;
+    ctx.globalAlpha = 0.5; // 50% Transparenz für Textmarker-Look
+    ctx.fillRect(highlightX, highlightY, highlightWidth, highlightHeight);
+    ctx.globalAlpha = 1.0; // Zurücksetzen
+  }
+  
+  // Handgeschriebener Event-Text (ÜBER dem Textmarker)
   ctx.fillStyle = textColor;
   ctx.font = `${design.bergfest.fontSize}px Caveat`;
   ctx.textAlign = textAlign;
@@ -611,42 +648,52 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 1;
   
-  ctx.fillText(title, textX, textY);
+  ctx.fillText(displayTitle, textX, textY);
   
-  // Doppelte Unterstreichung wenn Event heute ist
+  // Handgezeichnete Unterstreichungen wenn Event heute ist
   if (isToday) {
-    const metrics = ctx.measureText(title);
-    const underlineY1 = textY + design.bergfest.fontSize * 0.25;
-    const underlineY2 = textY + design.bergfest.fontSize * 0.35;
+    const metrics = ctx.measureText(displayTitle);
+    const textWidth = metrics.width;
+    
+    // Leicht wackelige Unterstreichungen für Hand-Look
+    const underlineY1 = textY + design.bergfest.fontSize * 0.22;
+    const underlineY2 = textY + design.bergfest.fontSize * 0.32;
     
     ctx.strokeStyle = textColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
     
-    // Erste Unterstreichung
+    // Erste Unterstreichung (leicht wackelig)
     ctx.beginPath();
     if (textAlign === 'left') {
-      ctx.moveTo(textX, underlineY1);
-      ctx.lineTo(textX + metrics.width, underlineY1);
+      ctx.moveTo(textX - 2, underlineY1);
+      ctx.quadraticCurveTo(textX + textWidth * 0.3, underlineY1 + 1, textX + textWidth * 0.6, underlineY1 - 0.5);
+      ctx.quadraticCurveTo(textX + textWidth * 0.8, underlineY1, textX + textWidth + 2, underlineY1 + 1);
     } else if (textAlign === 'right') {
-      ctx.moveTo(textX - metrics.width, underlineY1);
-      ctx.lineTo(textX, underlineY1);
+      ctx.moveTo(textX - textWidth - 2, underlineY1);
+      ctx.quadraticCurveTo(textX - textWidth * 0.7, underlineY1 + 1, textX - textWidth * 0.4, underlineY1 - 0.5);
+      ctx.quadraticCurveTo(textX - textWidth * 0.2, underlineY1, textX + 2, underlineY1 + 1);
     } else { // center
-      ctx.moveTo(textX - metrics.width / 2, underlineY1);
-      ctx.lineTo(textX + metrics.width / 2, underlineY1);
+      ctx.moveTo(textX - textWidth / 2 - 2, underlineY1);
+      ctx.quadraticCurveTo(textX - textWidth * 0.2, underlineY1 + 1, textX, underlineY1 - 0.5);
+      ctx.quadraticCurveTo(textX + textWidth * 0.2, underlineY1, textX + textWidth / 2 + 2, underlineY1 + 1);
     }
     ctx.stroke();
     
-    // Zweite Unterstreichung
+    // Zweite Unterstreichung (leicht wackelig, etwas anders)
     ctx.beginPath();
     if (textAlign === 'left') {
-      ctx.moveTo(textX, underlineY2);
-      ctx.lineTo(textX + metrics.width, underlineY2);
+      ctx.moveTo(textX - 2, underlineY2);
+      ctx.quadraticCurveTo(textX + textWidth * 0.25, underlineY2 - 1, textX + textWidth * 0.55, underlineY2 + 0.5);
+      ctx.quadraticCurveTo(textX + textWidth * 0.85, underlineY2 - 0.5, textX + textWidth + 2, underlineY2);
     } else if (textAlign === 'right') {
-      ctx.moveTo(textX - metrics.width, underlineY2);
-      ctx.lineTo(textX, underlineY2);
+      ctx.moveTo(textX - textWidth - 2, underlineY2);
+      ctx.quadraticCurveTo(textX - textWidth * 0.75, underlineY2 - 1, textX - textWidth * 0.45, underlineY2 + 0.5);
+      ctx.quadraticCurveTo(textX - textWidth * 0.15, underlineY2 - 0.5, textX + 2, underlineY2);
     } else { // center
-      ctx.moveTo(textX - metrics.width / 2, underlineY2);
-      ctx.lineTo(textX + metrics.width / 2, underlineY2);
+      ctx.moveTo(textX - textWidth / 2 - 2, underlineY2);
+      ctx.quadraticCurveTo(textX - textWidth * 0.25, underlineY2 - 1, textX, underlineY2 + 0.5);
+      ctx.quadraticCurveTo(textX + textWidth * 0.25, underlineY2 - 0.5, textX + textWidth / 2 + 2, underlineY2);
     }
     ctx.stroke();
   }
@@ -790,8 +837,8 @@ function generateWallpaper(projectConfig, design) {
     // X auf Event-Punkten zeichnen
     if (isEvent) {
       const event = activeEvents.find(e => e.isWorkDay && e.index === i);
-      const xColor = event.isToday ? design.colors.eventToday : design.event.xColor;
-      drawDDayX(ctx, centerX, centerY, dotSize, xColor);
+      // X immer in Grün-Gelb, auch wenn heute
+      drawDDayX(ctx, centerX, centerY, dotSize, design.event.xColor);
     }
   });
   
