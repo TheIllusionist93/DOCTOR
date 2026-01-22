@@ -19,8 +19,8 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
-      title: 'Bergfest', position:'top-right'
+      date: '2026-01-22',  // Format: YYYY-MM-DD
+      title: 'Bergfest', position: 'top-right'
       // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
     // Weitere Events hier einfügen:
@@ -71,6 +71,7 @@ const DESIGN = {
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
     bergfest: '#C8D41E',        // Grün-Gelb für Event-Linie und Text
+    eventToday: '#FF1493',      // Leuchtendes Magenta/Pink für heutiges Event
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -199,6 +200,8 @@ function findEventIndices(shootingDays, events, coords, gridCols, gridRows, proj
     const eventDate = parseDate(event.date);
     eventDate.setHours(0, 0, 0, 0);
     
+    const isToday = eventDate.getTime() === today.getTime();
+    
     // Nur Events anzeigen, die heute oder in der Zukunft liegen
     if (eventDate >= today) {
       // Finde den Index des Events in den Shooting Days
@@ -217,7 +220,8 @@ function findEventIndices(shootingDays, events, coords, gridCols, gridRows, proj
           title: event.title,
           date: event.date,
           position: position,
-          isWorkDay: true
+          isWorkDay: true,
+          isToday: isToday
         });
       } else {
         // Event fällt NICHT auf einen Arbeitstag - prüfe ob es ein freier Tag ist
@@ -240,7 +244,8 @@ function findEventIndices(shootingDays, events, coords, gridCols, gridRows, proj
               title: event.title,
               date: event.date,
               position: position,
-              isWorkDay: false
+              isWorkDay: false,
+              isToday: isToday
             });
           }
         }
@@ -452,10 +457,14 @@ function drawDDayX(ctx, centerX, centerY, size, color) {
 // 🏔️ EVENT-LINIE UND TEXT ZEICHNEN
 // ═══════════════════════════════════════════════════════════════════
 
-function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
+function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, design) {
   const baseLength = design.bergfest.baseLineLength;
   const textOffsetX = design.bergfest.textOffsetX;
   const textOffsetY = design.bergfest.textOffsetY;
+  
+  // Farbe abhängig davon, ob Event heute ist
+  const lineColor = isToday ? design.colors.eventToday : design.colors.bergfest;
+  const textColor = isToday ? design.colors.eventToday : design.colors.bergfest;
   
   let startX, startY, endX, endY, controlX, controlY;
   let textX, textY, textAlign, textBaseline;
@@ -580,7 +589,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
   }
   
   // Handgezeichnete, leicht geschwungene Linie
-  ctx.strokeStyle = design.colors.bergfest;
+  ctx.strokeStyle = lineColor;
   ctx.lineWidth = design.bergfest.lineWidth;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -591,7 +600,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
   ctx.stroke();
   
   // Handgeschriebener Event-Text
-  ctx.fillStyle = design.colors.bergfest;
+  ctx.fillStyle = textColor;
   ctx.font = `${design.bergfest.fontSize}px Caveat`;
   ctx.textAlign = textAlign;
   ctx.textBaseline = textBaseline;
@@ -603,6 +612,44 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, design) {
   ctx.shadowOffsetY = 1;
   
   ctx.fillText(title, textX, textY);
+  
+  // Doppelte Unterstreichung wenn Event heute ist
+  if (isToday) {
+    const metrics = ctx.measureText(title);
+    const underlineY1 = textY + design.bergfest.fontSize * 0.25;
+    const underlineY2 = textY + design.bergfest.fontSize * 0.35;
+    
+    ctx.strokeStyle = textColor;
+    ctx.lineWidth = 2;
+    
+    // Erste Unterstreichung
+    ctx.beginPath();
+    if (textAlign === 'left') {
+      ctx.moveTo(textX, underlineY1);
+      ctx.lineTo(textX + metrics.width, underlineY1);
+    } else if (textAlign === 'right') {
+      ctx.moveTo(textX - metrics.width, underlineY1);
+      ctx.lineTo(textX, underlineY1);
+    } else { // center
+      ctx.moveTo(textX - metrics.width / 2, underlineY1);
+      ctx.lineTo(textX + metrics.width / 2, underlineY1);
+    }
+    ctx.stroke();
+    
+    // Zweite Unterstreichung
+    ctx.beginPath();
+    if (textAlign === 'left') {
+      ctx.moveTo(textX, underlineY2);
+      ctx.lineTo(textX + metrics.width, underlineY2);
+    } else if (textAlign === 'right') {
+      ctx.moveTo(textX - metrics.width, underlineY2);
+      ctx.lineTo(textX, underlineY2);
+    } else { // center
+      ctx.moveTo(textX - metrics.width / 2, underlineY2);
+      ctx.lineTo(textX + metrics.width / 2, underlineY2);
+    }
+    ctx.stroke();
+  }
   
   // Schatten zurücksetzen
   ctx.shadowColor = 'transparent';
@@ -716,7 +763,8 @@ function generateWallpaper(projectConfig, design) {
         y: centerY,
         title: event.title,
         position: event.position,
-        isWorkDay: true
+        isWorkDay: true,
+        isToday: event.isToday
       });
     }
     
@@ -740,7 +788,9 @@ function generateWallpaper(projectConfig, design) {
     
     // X auf Event-Punkten zeichnen
     if (isEvent) {
-      drawDDayX(ctx, centerX, centerY, dotSize, design.event.xColor);
+      const event = activeEvents.find(e => e.isWorkDay && e.index === i);
+      const xColor = event.isToday ? design.colors.eventToday : design.event.xColor;
+      drawDDayX(ctx, centerX, centerY, dotSize, xColor);
     }
   });
   
@@ -758,14 +808,15 @@ function generateWallpaper(projectConfig, design) {
         y: midY,
         title: event.title,
         position: event.position,
-        isWorkDay: false
+        isWorkDay: false,
+        isToday: event.isToday
       });
     }
   });
   
   // Event-Linien und Texte zeichnen (NACH allen Punkten)
   eventCoords.forEach(event => {
-    drawEventAnnotation(ctx, event.x, event.y, event.title, event.position, design);
+    drawEventAnnotation(ctx, event.x, event.y, event.title, event.position, event.isToday, design);
   });
   
   // Fortschrittsbalken
