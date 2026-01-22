@@ -19,7 +19,7 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
+      date: '2026-01-22',  // Format: YYYY-MM-DD
       title: 'Bergfest', position: 'top-right'
       // position: 'right'  // Optional: Überschreibt automatische Platzierung
     },
@@ -71,7 +71,7 @@ const DESIGN = {
     progressBar: '#C8D41E',     // Grün-Gelb
     progressBarBg: '#B8320F',   // Dunkleres Orange
     bergfest: '#C8D41E',        // Grün-Gelb für Event-Linie und Text
-    eventToday: '#FF1493',      // Leuchtendes Magenta/Pink für heutiges Event
+    eventToday: '#FFD700',      // Kräftiges Gelb (Gold) für heutiges Event
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -83,7 +83,7 @@ const DESIGN = {
   bergfest: {
     fontSize: 48,
     lineWidth: 2.5,
-    baseLineLength: 230,  // Längere Linie, damit Text außerhalb des Grids ist
+    baseLineLength: 150,  // Längere Linie, damit Text außerhalb des Grids ist
     textOffsetX: 20,      // Abstand vom Linienende zum Text
     textOffsetY: 10,      // Vertikaler Abstand für top/bottom Positionen
   },
@@ -771,15 +771,16 @@ function generateWallpaper(projectConfig, design) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
-    if (isEvent) {
-      // Event-Punkt
-      ctx.fillStyle = design.event.dotColor;
-    } else if (i < completedDays - 1) {
+    if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
     } else if (i === completedDays - 1 && todayIsWorkDay) {
+      // Heute - immer Grün-Gelb, auch wenn Event
       ctx.fillStyle = design.colors.today;
     } else if (i === completedDays - 1 && !todayIsWorkDay) {
       ctx.fillStyle = design.colors.pastDays;
+    } else if (isEvent) {
+      // Event-Punkt (nur zukünftige Events)
+      ctx.fillStyle = design.event.dotColor;
     } else {
       ctx.fillStyle = design.colors.futureDays;
     }
