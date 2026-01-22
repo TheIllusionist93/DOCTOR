@@ -602,41 +602,7 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
   ctx.quadraticCurveTo(controlX, controlY, endX, endY);
   ctx.stroke();
   
-  // Textmarker-Effekt wenn Event heute ist (VOR dem Text!)
-  if (isToday) {
-    ctx.font = `${design.bergfest.fontSize}px Caveat`;
-    ctx.textAlign = textAlign;
-    ctx.textBaseline = textBaseline;
-    
-    const metrics = ctx.measureText(displayTitle);
-    const textWidth = metrics.width;
-    const textHeight = design.bergfest.fontSize;
-    
-    // Textmarker-Balken Position berechnen
-    let highlightX, highlightY, highlightWidth;
-    
-    if (textAlign === 'left') {
-      highlightX = textX - 5;
-      highlightWidth = textWidth + 10;
-    } else if (textAlign === 'right') {
-      highlightX = textX - textWidth - 5;
-      highlightWidth = textWidth + 10;
-    } else { // center
-      highlightX = textX - textWidth / 2 - 5;
-      highlightWidth = textWidth + 10;
-    }
-    
-    highlightY = textY - textHeight * 0.4;
-    const highlightHeight = textHeight * 0.8;
-    
-    // Textmarker zeichnen (leicht transparent)
-    ctx.fillStyle = design.colors.highlighter;
-    ctx.globalAlpha = 0.5; // 50% Transparenz für Textmarker-Look
-    ctx.fillRect(highlightX, highlightY, highlightWidth, highlightHeight);
-    ctx.globalAlpha = 1.0; // Zurücksetzen
-  }
-  
-  // Handgeschriebener Event-Text (ÜBER dem Textmarker)
+  // Handgeschriebener Event-Text ZUERST
   ctx.fillStyle = textColor;
   ctx.font = `${design.bergfest.fontSize}px Caveat`;
   ctx.textAlign = textAlign;
@@ -650,14 +616,74 @@ function drawEventAnnotation(ctx, eventX, eventY, title, position, isToday, desi
   
   ctx.fillText(displayTitle, textX, textY);
   
-  // Handgezeichnete Unterstreichungen wenn Event heute ist
+  // Schatten zurücksetzen
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  
+  // Textmarker-Effekt wenn Event heute ist (ÜBER dem Text!)
+  if (isToday) {
+    const metrics = ctx.measureText(displayTitle);
+    const textWidth = metrics.width;
+    const textHeight = design.bergfest.fontSize;
+    
+    // Textmarker etwas breiter und höher als Text
+    let highlightX, highlightWidth;
+    
+    if (textAlign === 'left') {
+      highlightX = textX - 8;
+      highlightWidth = textWidth + 16;
+    } else if (textAlign === 'right') {
+      highlightX = textX - textWidth - 8;
+      highlightWidth = textWidth + 16;
+    } else { // center
+      highlightX = textX - textWidth / 2 - 8;
+      highlightWidth = textWidth + 16;
+    }
+    
+    const highlightY = textY - textHeight * 0.5;
+    const highlightHeight = textHeight * 0.9;
+    
+    // Händischer Textmarker mit unebenen Kanten (Bezier-Kurven)
+    ctx.fillStyle = design.colors.highlighter;
+    ctx.globalAlpha = 0.4; // Etwas transparenter für "über Text"-Look
+    
+    ctx.beginPath();
+    // Oben (leicht wackelig)
+    ctx.moveTo(highlightX, highlightY + 2);
+    ctx.quadraticCurveTo(
+      highlightX + highlightWidth * 0.25, highlightY - 1,
+      highlightX + highlightWidth * 0.5, highlightY + 1
+    );
+    ctx.quadraticCurveTo(
+      highlightX + highlightWidth * 0.75, highlightY - 0.5,
+      highlightX + highlightWidth, highlightY + 2
+    );
+    // Rechts
+    ctx.lineTo(highlightX + highlightWidth, highlightY + highlightHeight - 2);
+    // Unten (leicht wackelig)
+    ctx.quadraticCurveTo(
+      highlightX + highlightWidth * 0.75, highlightY + highlightHeight + 1,
+      highlightX + highlightWidth * 0.5, highlightY + highlightHeight - 1
+    );
+    ctx.quadraticCurveTo(
+      highlightX + highlightWidth * 0.25, highlightY + highlightHeight + 0.5,
+      highlightX, highlightY + highlightHeight - 2
+    );
+    // Links
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.globalAlpha = 1.0; // Zurücksetzen
+  }
+  
+  // Handgezeichnete Unterstreichungen wenn Event heute ist (tiefer!)
   if (isToday) {
     const metrics = ctx.measureText(displayTitle);
     const textWidth = metrics.width;
     
-    // Leicht wackelige Unterstreichungen für Hand-Look
-    const underlineY1 = textY + design.bergfest.fontSize * 0.22;
-    const underlineY2 = textY + design.bergfest.fontSize * 0.32;
+    // Unterstreichungen TIEFER (weiter unten vom Text)
+    const underlineY1 = textY + design.bergfest.fontSize * 0.35;
+    const underlineY2 = textY + design.bergfest.fontSize * 0.45;
     
     ctx.strokeStyle = textColor;
     ctx.lineWidth = 2.5;
