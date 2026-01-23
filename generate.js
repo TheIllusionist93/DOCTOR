@@ -19,9 +19,9 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
-      title: 'Bergfest',
-      position: 'top-right'
+      date: '2026-02-23',  // Format: YYYY-MM-DD
+      title: 'AZV-Tag',
+      position: 'top-left'
     },
     // Weitere Events hier einfügen:
     // { date: '2026-02-15', title: 'Valentinstag-Dreh', position: 'top' },
@@ -53,6 +53,7 @@ const PROJECT_CONFIG = {
     '2026-01-05',
     '2026-01-06',
     '2026-01-19',
+    '2026-02-23',
     // Weitere Daten hier einfügen
   ]
 };
