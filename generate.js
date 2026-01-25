@@ -23,9 +23,9 @@ const PROJECT_CONFIG = {
       title: 'Bergfest',
       position: 'top-right',
       
-      date: '2026-02-23',
-      title: 'AZV-Tag',
-      position: 'top-left',
+      //date: '2026-02-23',
+      //title: 'AZV-Tag',
+      //position: 'top-left',
     },
     // Weitere Events hier einfügen:
     // { date: '2026-02-15', title: 'Valentinstag-Dreh', position: 'top' },
@@ -88,7 +88,7 @@ const DESIGN = {
   bergfest: {
     fontSize: 48,
     lineWidth: 2.5,
-    baseLineLength: 260,  // Längere Linie, damit Text außerhalb des Grids ist
+    baseLineLength: 300,  // Längere Linie, damit Text außerhalb des Grids ist
     textOffsetX: 20,      // Abstand vom Linienende zum Text
     textOffsetY: 10,      // Vertikaler Abstand für top/bottom Positionen
   },
