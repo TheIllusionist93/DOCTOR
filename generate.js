@@ -78,6 +78,8 @@ const DESIGN = {
     progressBarBg: '#B8320F',   // Dunkleres Orange
     bergfest: '#C8D41E',        // Grün-Gelb für Event-Linie und Text
     highlighter: '#FF10F0',     // Neon-Pink/Magenta für Textmarker
+    finalDay: '#FF10F0',        // Neon-Pink/Magenta für letzten Punkt (77)
+    wrapDays: '#FF69B4',        // Hot Pink für alle Punkte am letzten Tag/Wrap
     text: '#ffffff',
     textSecondary: '#ffffff',
   },
@@ -868,8 +870,14 @@ function generateWallpaper(projectConfig, design) {
     ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
     if (allDotsComplete) {
-      // 🎉 LETZTER DREHTAG ODER DANACH - Alle Punkte in Projektfarbe (Grün-Gelb)
-      ctx.fillStyle = design.colors.today;
+      // 🎉 LETZTER DREHTAG ODER DANACH - Alle Punkte in Pink!
+      if (i === completedDays - 1) {
+        // Der 77. Punkt (letzter) bekommt kräftiges Neon-Pink
+        ctx.fillStyle = design.colors.finalDay;
+      } else {
+        // Alle anderen Punkte in Hot Pink
+        ctx.fillStyle = design.colors.wrapDays;
+      }
     } else if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
     } else if (i === completedDays - 1 && todayIsWorkDay) {
