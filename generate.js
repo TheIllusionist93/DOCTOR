@@ -11,7 +11,7 @@ registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 const PROJECT_CONFIG = {
   totalDays: 77,
   startDate: '2025-11-17',  // Format: YYYY-MM-DD
-  projectName: 'DOCTOR DT',
+  projectName: 'DOCTOR',
   
   // Events: Beliebig viele Meilensteine definieren
   // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
@@ -176,6 +176,15 @@ function getCurrentDayIndex(shootingDays) {
     if (shootDay > today) {
       return i - 1;
     }
+  }
+  
+  // Projekt ist abgeschlossen - prüfe ob heute NACH dem letzten Drehtag ist
+  const lastShootDay = new Date(shootingDays[shootingDays.length - 1]);
+  lastShootDay.setHours(0, 0, 0, 0);
+  
+  if (today > lastShootDay) {
+    // Heute ist nach dem letzten Drehtag
+    return shootingDays.length; // Index größer als letzter Tag = WRAP
   }
   
   return shootingDays.length - 1;
@@ -744,7 +753,12 @@ function generateWallpaper(projectConfig, design) {
   const shootingDays = calculateShootingDays(projectConfig);
   const currentDayIndex = getCurrentDayIndex(shootingDays);
   const todayIsWorkDay = isTodayAWorkDay(shootingDays);
-  const completedDays = currentDayIndex + 1;
+  
+  // Letzter Drehtag erreicht wenn currentDayIndex == totalDays - 1
+  const lastShootingDay = currentDayIndex >= projectConfig.totalDays - 1;
+  // Projekt wrapped (Tag danach) wenn currentDayIndex größer als alle Drehtage
+  const projectWrapped = currentDayIndex >= projectConfig.totalDays;
+  const completedDays = Math.min(currentDayIndex + 1, projectConfig.totalDays);
   const percentage = Math.round((completedDays / projectConfig.totalDays) * 100);
   
   // Rechteck-Spiral-Koordinaten generieren
@@ -825,6 +839,9 @@ function generateWallpaper(projectConfig, design) {
   const offsetX = (1170 - gridWidth) / 2 - minX;
   const offsetY = (2532 - gridHeight) / 2 - minY + design.dots.verticalOffset;
   
+  // Alle Punkte komplett wenn am letzten Tag oder danach
+  const allDotsComplete = lastShootingDay || projectWrapped;
+  
   // Punkte zeichnen
   const eventCoords = []; // Speichern für Event-Linien
   
@@ -850,7 +867,10 @@ function generateWallpaper(projectConfig, design) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, dotSize / 2, 0, Math.PI * 2);
     
-    if (i < completedDays - 1) {
+    if (allDotsComplete) {
+      // 🎉 LETZTER DREHTAG ODER DANACH - Alle Punkte in Projektfarbe (Grün-Gelb)
+      ctx.fillStyle = design.colors.today;
+    } else if (i < completedDays - 1) {
       ctx.fillStyle = design.colors.pastDays;
     } else if (i === completedDays - 1 && todayIsWorkDay) {
       // Heute - immer Grün-Gelb, auch wenn Event
@@ -866,8 +886,8 @@ function generateWallpaper(projectConfig, design) {
     
     ctx.fill();
     
-    // X auf Event-Punkten zeichnen
-    if (isEvent) {
+    // X auf Event-Punkten zeichnen (nur wenn nicht am letzten Tag oder danach)
+    if (isEvent && !allDotsComplete) {
       const event = activeEvents.find(e => e.isWorkDay && e.index === i);
       // X immer in Grün-Gelb, auch wenn heute
       drawDDayX(ctx, centerX, centerY, dotSize, design.event.xColor);
@@ -894,10 +914,12 @@ function generateWallpaper(projectConfig, design) {
     }
   });
   
-  // Event-Linien und Texte zeichnen (NACH allen Punkten)
-  eventCoords.forEach(event => {
-    drawEventAnnotation(ctx, event.x, event.y, event.title, event.position, event.isToday, design);
-  });
+  // Event-Linien und Texte zeichnen (NACH allen Punkten, aber nur wenn nicht am letzten Tag oder danach)
+  if (!allDotsComplete) {
+    eventCoords.forEach(event => {
+      drawEventAnnotation(ctx, event.x, event.y, event.title, event.position, event.isToday, design);
+    });
+  }
   
   // Fortschrittsbalken
   const barY = offsetY + gridHeight + design.progressBar.marginTop;
@@ -922,11 +944,12 @@ function generateWallpaper(projectConfig, design) {
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 2;
   
-  ctx.fillText(
-    `${projectConfig.projectName} ${completedDays}/${projectConfig.totalDays}`,
-    585,
-    textY
-  );
+  // Text ändert sich einen Tag nach Projektende
+  const displayText = projectWrapped 
+    ? `${projectConfig.projectName} - IT'S A WRAP!`
+    : `${projectConfig.projectName} DT ${completedDays}/${projectConfig.totalDays}`;
+  
+  ctx.fillText(displayText, 585, textY);
   
   // Als PNG speichern
   const buffer = canvas.toBuffer('image/png');
