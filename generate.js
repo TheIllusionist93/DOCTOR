@@ -52,7 +52,7 @@ const PROJECT_CONFIG = {
 const DESIGN = {
   colors: {
     background: '#E8461B',      // Leuchtendes Orange
-    backgroundText: '#D63D15',  // Etwas dunkler für DOCTOR im Hintergrund
+    backgroundText: '#D63D15',  // Etwas dunkler für TITEL im Hintergrund
     pastDays: '#ffffff',
     today: '#C8D41E',           // Grün-Gelb
     futureDays: '#B8320F',      // Dunkleres Orange
@@ -788,7 +788,7 @@ function generateWallpaper(projectConfig, design) {
   ctx.fillStyle = design.colors.background;
   ctx.fillRect(0, 0, 1170, 2532);
   
-  // DOCTOR im Hintergrund
+  // TITEL im Hintergrund
   ctx.save();
   ctx.fillStyle = design.colors.backgroundText;
   ctx.font = 'bold 650px Arial';
@@ -799,9 +799,9 @@ function generateWallpaper(projectConfig, design) {
   const startY = 350;
   const lineHeight = 550;
   
-  ctx.fillText('DOCTOR', 50, startY);
-  ctx.fillText('TOR DOC', 100, startY + lineHeight);
-  ctx.fillText('CTOR D', 20, startY + lineHeight * 2);
+  ctx.fillText('SUPERIOR', 50, startY);
+  ctx.fillText('ERIOR SUP', 100, startY + lineHeight);
+  ctx.fillText('OR SUPERI', 20, startY + lineHeight * 2);
   
   ctx.restore();
   
