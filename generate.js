@@ -9,9 +9,9 @@ registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 // ═══════════════════════════════════════════════════════════════════
 
 const PROJECT_CONFIG = {
-  totalDays: 77,
-  startDate: '2025-11-17',  // Format: YYYY-MM-DD
-  projectName: 'DOCTOR',
+  totalDays: 60,
+  startDate: '2026-05-18',  // Format: YYYY-MM-DD
+  projectName: 'SUPERIOR',
   
   // Events: Beliebig viele Meilensteine definieren
   // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
@@ -19,7 +19,7 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2025-05-17',  // Format: YYYY-MM-DD
+      date: '2026-05-18',  // Format: YYYY-MM-DD
       title: 'Drehstart',
       position: 'top-left',
       
@@ -41,24 +41,6 @@ const PROJECT_CONFIG = {
   // Ausnahmen: An diesen Wochentagen ist frei
   weekdayOffDays: [
     '2025-12-22',
-    '2025-12-23',
-    '2025-12-24',
-    '2025-12-25',
-    '2025-12-26',
-    '2025-12-27',
-    '2025-12-28',
-    '2025-12-29',
-    '2025-12-30',
-    '2025-12-31',
-    '2026-01-01',
-    '2026-01-02',
-    '2026-01-03',
-    '2026-01-04',
-    '2026-01-05',
-    '2026-01-06',
-    '2026-01-19',
-    '2026-01-30',
-    '2026-02-23',
     // Weitere Daten hier einfügen
   ]
 };
