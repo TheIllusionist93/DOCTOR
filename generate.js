@@ -9,9 +9,9 @@ registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 // ═══════════════════════════════════════════════════════════════════
 
 const PROJECT_CONFIG = {
-  totalDays: 77,
-  startDate: '2025-11-17',  // Format: YYYY-MM-DD
-  projectName: 'DOCTOR',
+  totalDays: 60,
+  startDate: '2026-05-18',  // Format: YYYY-MM-DD
+  projectName: 'SUPERIOR',
   
   // Events: Beliebig viele Meilensteine definieren
   // Nur Events die heute oder in der Zukunft liegen, werden angezeigt
@@ -19,13 +19,13 @@ const PROJECT_CONFIG = {
   // Mögliche Positionen: 'top', 'right', 'bottom', 'left', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   events: [
     {
-      date: '2026-01-23',  // Format: YYYY-MM-DD
-      title: 'Bergfest',
-      position: 'top-right',
-      
-      date: '2026-02-23',
-      title: 'AZV-Tag',
+      date: '2026-05-18',  // Format: YYYY-MM-DD
+      title: 'Drehstart',
       position: 'top-left',
+      
+     // date: '2026-02-23',
+     // title: 'AZV-Tag',
+     // position: 'top-left',
     },
     // Weitere Events hier einfügen:
     // { date: '2026-02-15', title: 'Valentinstag-Dreh', position: 'top' },
