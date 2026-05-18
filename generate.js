@@ -9,7 +9,7 @@ registerFont('./Caveat-Regular.ttf', { family: 'Caveat' });
 // ═══════════════════════════════════════════════════════════════════
 
 const PROJECT_CONFIG = {
-  totalDays: 60,
+  totalDays: 61,
   startDate: '2026-05-18',  // Format: YYYY-MM-DD
   projectName: 'SUPERIOR',
   
@@ -34,13 +34,13 @@ const PROJECT_CONFIG = {
   
   // Ausnahmen: An diesen Wochenendtagen wird gearbeitet
   weekendWorkDays: [
-    '2026-05-15',
+    '2026-05-30',
     // Weitere Daten hier einfügen
   ],
   
   // Ausnahmen: An diesen Wochentagen ist frei
   weekdayOffDays: [
-    '2025-12-22',
+    '2026-05-25',
     // Weitere Daten hier einfügen
   ]
 };
